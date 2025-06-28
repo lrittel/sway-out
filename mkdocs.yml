@@ -1,0 +1,24 @@
+site_name: "sway-out"
+
+theme:
+  name: "material"
+  features:
+    - content.code.copy
+
+plugins:
+  - autorefs
+  - mkdocstrings
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+nav:
+  - sway-out: index.md
+  - Reference: []
+    # - reference/sway_out.main.md

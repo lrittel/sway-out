@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 3a8bc63
+_src_path: gh:lrittel/template-python
+description: A layout save/apply utility for the Sway window manager.
+min_python_version: '3.12'
+project_name: sway-out
+root_module_name: sway_out
+use_commitizen: true
+use_github_workflow: true
+use_just: true
+use_mkdocs: true
+use_nix_flake: true
+use_pre_commit: true
+use_py_click: true
