@@ -6,6 +6,7 @@ import yaml
 from i3ipc import Connection
 
 from sway_out.applications import launch_application
+from sway_out.connection import check_replies
 
 from .layouts import load_layout_configuration
 
@@ -30,8 +31,11 @@ def main_foo(ctx: click.Context, layout_file):
         click.echo(f"Failed to read layout configuration: {e}", err=True)
         return
 
-    for application in configuration.applications:
-        launch_application(connection, application)
+    for name, content in configuration.workspaces.items():
+        replies = connection.command(f'workspace "{name}')
+        check_replies(replies)
+        for application in content.applications:
+            launch_application(connection, application)
 
 
 if __name__ == "__main__":

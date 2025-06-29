@@ -11,8 +11,12 @@ class ApplicationLaunchConfig(BaseModel):
     ]
 
 
-class Layout(BaseModel):
+class WorkspaceLayout(BaseModel):
     applications: list[ApplicationLaunchConfig]
+
+
+class Layout(BaseModel):
+    workspaces: dict[str, WorkspaceLayout]
 
 
 def load_layout_configuration(file) -> Layout:
