@@ -1,3 +1,5 @@
+"""Data structures and utilities for layout descriptions."""
+
 from typing import Annotated, Self, TextIO
 
 import yaml
@@ -60,12 +62,11 @@ class Layout(BaseModel):
     workspaces: dict[str, WorkspaceLayout]
 
 
-def load_layout_configuration(file) -> Layout:
+def load_layout_configuration(file: TextIO) -> Layout:
     """Load a layout configuration from a file-like object.
 
     Arguments:
-        file:
-            The source file.
+        file: The source file.
     Raises:
         yaml.YAMLError:
             When the file does not contain valid YAML.

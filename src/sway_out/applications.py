@@ -1,3 +1,5 @@
+"""Launching of applications."""
+
 import logging
 import time
 

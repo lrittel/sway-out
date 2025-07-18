@@ -1,3 +1,5 @@
+"""Main entrypoint."""
+
 import logging
 
 import click
@@ -15,6 +17,7 @@ from .layouts import load_layout_configuration
 @click.version_option(prog_name="sway-out", package_name="sway-out")
 @click.pass_context
 def main(ctx: click.Context):
+    """Main entrypoint."""
     logging.basicConfig(level=logging.DEBUG)
     ctx.ensure_object(Connection)
 
@@ -22,7 +25,7 @@ def main(ctx: click.Context):
 @main.command("apply")
 @click.argument("layout_file", type=click.File("rb"))
 @click.pass_context
-def main_foo(ctx: click.Context, layout_file):
+def main_apply(ctx: click.Context, layout_file):
     connection = ctx.find_object(Connection)
     assert connection is not None
     try:
