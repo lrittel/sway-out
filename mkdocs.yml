@@ -20,5 +20,9 @@ markdown_extensions:
 
 nav:
   - sway-out: index.md
-  - Reference: []
-    # - reference/sway_out.main.md
+  - Reference:
+    - sway_out.applications: reference/sway_out.applications.md
+    - sway_out.connection: reference/sway_out.connection.md
+    - sway_out.layouts: reference/sway_out.layouts.md
+    - sway_out.main: reference/sway_out.main.md
+    - sway_out.matching: reference/sway_out.matching.md

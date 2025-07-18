@@ -1,3 +1,5 @@
+"""Utilities related to the Sway connection."""
+
 import logging
 
 from i3ipc import CommandReply
