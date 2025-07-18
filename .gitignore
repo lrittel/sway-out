@@ -35,3 +35,6 @@ cover/
 
 # Local configuration
 .env
+
+# Generated documentation
+/site/
