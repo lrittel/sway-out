@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: 3a8bc63
+_commit: ffb4afc
 _src_path: gh:lrittel/template-python
 description: A layout save/apply utility for the Sway window manager.
 min_python_version: '3.12'
