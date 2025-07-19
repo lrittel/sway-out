@@ -6,15 +6,14 @@ from collections.abc import Generator
 
 from i3ipc import Con, Connection
 
-from sway_out.connection import check_replies
-from sway_out.matching import find_current_workspace, find_windows_on_workspace
-
+from .connection import check_replies
 from .layout_files import (
     ApplicationLaunchConfig,
     ContainerConfig,
     WindowMatchExpression,
     WorkspaceLayout,
 )
+from .matching import find_current_workspace, find_windows_on_workspace
 
 logger = logging.getLogger(__name__)
 

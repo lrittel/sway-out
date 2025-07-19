@@ -7,9 +7,8 @@ import pydantic
 import yaml
 from i3ipc import Connection
 
-from sway_out.applications import launch_applications_from_layout
-from sway_out.connection import check_replies
-
+from .applications import launch_applications_from_layout
+from .connection import check_replies
 from .layout_files import load_layout_configuration
 
 
