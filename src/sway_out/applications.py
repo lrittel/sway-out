@@ -2,13 +2,19 @@
 
 import logging
 import time
+from collections.abc import Generator
 
 from i3ipc import Con, Connection
 
 from sway_out.connection import check_replies
 from sway_out.matching import find_current_workspace, find_windows_on_workspace
 
-from .layout_files import ApplicationLaunchConfig, WindowMatchExpression
+from .layout_files import (
+    ApplicationLaunchConfig,
+    ContainerConfig,
+    WindowMatchExpression,
+    WorkspaceLayout,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +23,37 @@ LAUNCH_TIMEOUT_SECONDS = 10
 
 LAUNCH_CHECK_INTERVAL_SECONDS = 0.5
 """How long to wait between checks for the application window."""
+
+
+def launch_applications_from_layout(
+    connection: Connection, layout: WorkspaceLayout
+) -> list[tuple[ApplicationLaunchConfig, int]]:
+    """Launch the applications contained in the given layout.
+
+    Parameters:
+        connection: A connection to Sway.
+        layout: The layout containing the applications to
+                launch.
+    Returns:
+        A list of pairs between the leaves of the layout and the
+        Sway IDs of the application windows.
+    """
+
+    def go(
+        container: ApplicationLaunchConfig | ContainerConfig,
+    ) -> Generator[tuple[ApplicationLaunchConfig, int]]:
+        if isinstance(container, ApplicationLaunchConfig):
+            yield (container, launch_application(connection, container))
+        else:
+            assert isinstance(container, ContainerConfig)
+            for child in container.children:
+                yield from go(child)
+
+    return [
+        (launch_config, window_id)
+        for container in layout.children
+        for (launch_config, window_id) in go(container)
+    ]
 
 
 def escape_argument(arg: str) -> str:
@@ -31,12 +68,16 @@ def escape_argument(arg: str) -> str:
     return f'"{arg}"'
 
 
-def launch_application(connection: Connection, launch_config: ApplicationLaunchConfig):
+def launch_application(
+    connection: Connection, launch_config: ApplicationLaunchConfig
+) -> int:
     """Launch an application on the current workspace.
 
     Parameters:
         connection: A connection to Sway.
         launch_config: The launch configuration for the application.
+    Returns:
+        The Sway window ID of the application's window.
     Raises:
         RuntimeError:
             If the application fails to start.
@@ -69,7 +110,7 @@ def launch_application(connection: Connection, launch_config: ApplicationLaunchC
 
     # Wait for the application to launch and the window to appear
     try:
-        wait_for_window(
+        window_id = wait_for_window(
             connection, workspace, launch_config.match, matching_windows_before
         )
     except RuntimeError as e:
@@ -77,6 +118,7 @@ def launch_application(connection: Connection, launch_config: ApplicationLaunchC
         raise RuntimeError(f"Failed to launch application '{cmd}': {e}") from e
     else:
         logger.info(f"'{cmd}' successfully launched")
+        return window_id
 
 
 def wait_for_window(
@@ -84,7 +126,7 @@ def wait_for_window(
     workspace: Con,
     match: WindowMatchExpression,
     known_windows: list[Con],
-):
+) -> int:
     """Wait for the application to launch and a matching window to appear on the workspace.
 
     Parameters:
@@ -92,6 +134,8 @@ def wait_for_window(
         workspace: The workspace tree node to look in.
         match: The matching expression to use.
         known_windows: Windows to ignore.
+    Returns:
+        The Sway window ID of the new window.
     Raises:
         RuntimeError:
             If no matching window is found within the timeout duration.
@@ -114,7 +158,7 @@ def wait_for_window(
                 logger.debug(
                     f"New matching window found: {window.name} ({window.window_title})"
                 )
-                return
+                return window.id
         time.sleep(LAUNCH_CHECK_INTERVAL_SECONDS)
     else:
         raise RuntimeError(

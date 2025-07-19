@@ -1,4 +1,3 @@
-<<<<<<< HEAD:src/sway_out/layouts.py
 """Data structures and utilities for layout descriptions."""
 
 from typing import Annotated, Literal, Self, TextIO
@@ -55,8 +54,13 @@ class ApplicationLaunchConfig(BaseModel):
     ]
 
 
+class ContainerConfig(BaseModel):
+    type_: Literal["splith", "splitv", "stacking", "tabbed"]
+    children: "list[ApplicationLaunchConfig | ContainerConfig]"
+
+
 class WorkspaceLayout(BaseModel):
-    applications: list[ApplicationLaunchConfig]
+    layout: list[ApplicationLaunchConfig | ContainerConfig]
 
 
 class Layout(BaseModel):
