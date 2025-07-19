@@ -7,7 +7,7 @@ import pydantic
 import yaml
 from i3ipc import Connection
 
-from sway_out.applications import launch_application
+from sway_out.applications import launch_applications_from_layout
 from sway_out.connection import check_replies
 
 from .layout_files import load_layout_configuration
@@ -37,8 +37,7 @@ def main_apply(ctx: click.Context, layout_file):
     for name, content in configuration.workspaces.items():
         replies = connection.command(f'workspace "{name}')
         check_replies(replies)
-        for application in content.applications:
-            launch_application(connection, application)
+        launche_applications = launch_applications_from_layout(connection, content)
 
 
 if __name__ == "__main__":
