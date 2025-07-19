@@ -10,7 +10,7 @@ from i3ipc import Connection
 from sway_out.applications import launch_application
 from sway_out.connection import check_replies
 
-from .layouts import load_layout_configuration
+from .layout_files import load_layout_configuration
 
 
 @click.group()

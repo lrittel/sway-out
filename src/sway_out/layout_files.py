@@ -1,6 +1,7 @@
+<<<<<<< HEAD:src/sway_out/layouts.py
 """Data structures and utilities for layout descriptions."""
 
-from typing import Annotated, Self, TextIO
+from typing import Annotated, Literal, Self, TextIO
 
 import yaml
 from pydantic import BaseModel, Field, model_validator

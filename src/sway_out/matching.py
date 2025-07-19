@@ -6,7 +6,7 @@ from collections.abc import Generator
 
 from i3ipc import Con, Connection
 
-from sway_out.layouts import WindowMatchExpression
+from sway_out.layout_files import WindowMatchExpression
 
 logger = logging.getLogger(__name__)
 
