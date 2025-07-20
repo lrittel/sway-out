@@ -6,7 +6,7 @@ from collections.abc import Generator
 
 from i3ipc import Con, Connection
 
-from .layout_files import WindowMatchExpression
+from .layout_files import ApplicationLaunchConfig, WindowMatchExpression
 
 logger = logging.getLogger(__name__)
 
@@ -32,58 +32,58 @@ def find_windows_on_workspace(
             )
             continue
 
-        if leaf.app_id is not None:
-            # The window is Wayland native
-            logger.debug(f"Checking Wayland leaf: {leaf.app_id} ({leaf.name})")
-            wayland = match_expression.wayland
-            if wayland is None:
-                continue
-            assert (
-                wayland.app_id is not None or wayland.title is not None
-            ), "At least one Wayland match expression must be provided, this should be enforced by the model."
-            if (
-                wayland.app_id is not None
-                and re.match(wayland.app_id, leaf.app_id) is None
-            ):
-                continue
-            if wayland.title is not None and re.match(wayland.title, leaf.name) is None:
-                continue
-        else:
-            # The window runs under XWayland
-            logger.debug(
-                f"Checking XWayland leaf: {leaf.window_class},{leaf.window_instance} ({leaf.window_title})"
-            )
-            x11 = match_expression.x11
-            if x11 is None:
-                continue
-            assert (
-                x11.class_ is not None
-                or x11.instance is not None
-                or x11.title is not None
-            ), "At least one X11 match expression must be provided, this should be enforced by the model."
-            if (
-                x11.title is not None
-                and leaf.window_title is not None
-                and re.match(x11.title, leaf.window_title) is None
-            ):
-                continue
-            if (
-                x11.class_ is not None
-                and leaf.window_class is not None
-                and re.match(x11.class_, leaf.window_class) is None
-            ):
-                continue
-            if (
-                x11.instance is not None
-                and leaf.window_instance is not None
-                and re.match(x11.instance, leaf.window_instance) is None
-            ):
-                continue
-
-        logger.debug(f"Matching leaf found: {leaf.name} ({leaf.window_title})")
-        yield leaf
+        if is_window_matching(leaf, match_expression):
+            logger.debug(f"Matching leaf found: {leaf.name} ({leaf.window_title})")
+            yield leaf
 
     logger.debug("Finished window search")
+
+
+def is_window_matching(con: Con, match_expression: WindowMatchExpression) -> bool:
+    """Check if a window matches the given match expression.
+
+    Parameters:
+        con: The window to check.
+        match_expression: The match expression to use.
+    Returns:
+        True if the window matches the expression, False otherwise.
+    """
+
+    if con.app_id is not None:
+        # The window is Wayland native
+        logger.debug(f"Checking Wayland con: {con.app_id} ({con.name})")
+        wayland = match_expression.wayland
+        if wayland is None:
+            return False
+        assert (
+            wayland.app_id is not None or wayland.title is not None
+        ), "At least one Wayland match expression must be provided, this should be enforced by the model."
+        return (
+            wayland.app_id is None or re.match(wayland.app_id, con.app_id) is not None
+        ) and (wayland.title is None or re.match(wayland.title, con.name) is not None)
+    elif con.window_class is not None or con.window_instance is not None:
+        # The window runs under XWayland
+        logger.debug(
+            f"Checking XWayland con: {con.window_class},{con.window_instance} ({con.window_title})"
+        )
+        x11 = match_expression.x11
+        if x11 is None:
+            return False
+        assert (
+            x11.class_ is not None or x11.instance is not None or x11.title is not None
+        ), "At least one X11 match expression must be provided, this should be enforced by the model."
+        return (
+            (x11.title is None or re.match(x11.title, con.window_title) is not None)
+            and (
+                x11.class_ is None or re.match(x11.class_, con.window_class) is not None
+            )
+            and (
+                x11.instance is None
+                or re.match(x11.instance, con.window_instance) is not None
+            )
+        )
+    else:
+        return False
 
 
 def find_current_workspace(connection: Connection) -> Con | None:

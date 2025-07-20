@@ -55,12 +55,13 @@ class ApplicationLaunchConfig(BaseModel):
 
 
 class ContainerConfig(BaseModel):
-    type_: Literal["splith", "splitv", "stacking", "tabbed"]
+    layout: Literal["splith", "splitv", "stacking", "tabbed"]
     children: "list[ApplicationLaunchConfig | ContainerConfig]"
 
 
 class WorkspaceLayout(BaseModel):
-    layout: list[ApplicationLaunchConfig | ContainerConfig]
+    layout: Literal["splith", "splitv", "stacking", "tabbed"] | None = None
+    children: list[ApplicationLaunchConfig | ContainerConfig]
 
 
 class Layout(BaseModel):
