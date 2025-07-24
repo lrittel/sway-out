@@ -5,7 +5,7 @@ import logging
 
 from i3ipc import Con, Connection
 
-from sway_out.connection import check_replies, run_command_on
+from sway_out.connection import find_cons_by_id, run_command_on
 
 from .layout_files import ApplicationLaunchConfig, ContainerConfig, WorkspaceLayout
 from .matching import is_window_matching
@@ -109,17 +109,6 @@ def create_layout(
     Note: This function modifies its argument.
     """
 
-    def find_cons_by_id(*con_ids: int) -> list[Con]:
-        """Finds all containers with the given IDs."""
-        tree = connection.get_tree()
-        result: list[Con] = []
-        for con_id in con_ids:
-            con = tree.find_by_id(con_id)
-            if con is None:
-                raise RuntimeError(f"Container with ID {con_id} not found in tree")
-            result.append(con)
-        return result
-
     def find_con_for_application(container: ApplicationLaunchConfig) -> Con:
         con_id = container._con_id
         assert con_id is not None, (
@@ -142,7 +131,7 @@ def create_layout(
         ), "This should not happen because there should always be at least a workspace as a parent."
 
     def move_con_to_workspace(con_id: int):
-        [con] = find_cons_by_id(con_id)
+        (con,) = find_cons_by_id(connection, con_id)
         if con.workspace().id != workspace_id:
             logger.debug(
                 f"Moving container {con.name} ({con.id}) to workspace {workspace_con.name}"
@@ -158,7 +147,7 @@ def create_layout(
             # Move the container to the right to not disturb the finished part of the layout.
             run_command_on(con, f"move right")
             # Make shure that the container is still on the workspace.
-            [con] = find_cons_by_id(con_id)
+            (con,) = find_cons_by_id(connection, con_id)
             assert con.workspace().id == workspace_id, (
                 f"Accidentally moved {con.name} ({con.id}) to another workspace "
                 + f"({con.workspace().name} ({con.workspace().id}) "
@@ -166,7 +155,7 @@ def create_layout(
             )
 
     def swap_cons(con_id: int, target_id: int):
-        [con, target_con] = find_cons_by_id(con_id, target_id)
+        (con, target_con) = find_cons_by_id(connection, con_id, target_id)
         if target_id != con_id:
             logger.debug(
                 f"Swapping container {con.name} ({con.id}) with {target_con.name} ({target_con.id}) "
@@ -179,7 +168,7 @@ def create_layout(
     def move_con_into(con_id: int, target_id: int):
         # There does not seem to be a way to move a con to an arbitrary position in a layout.
         # But we can move it into the layout using marks.
-        [con, target_con] = find_cons_by_id(con_id, target_id)
+        (con, target_con) = find_cons_by_id(connection, con_id, target_id)
         run_command_on(target_con, f"mark --add {MARK}")
         run_command_on(con, f"move container to mark {MARK}")
         run_command_on(target_con, f"unmark {MARK}")
@@ -197,9 +186,9 @@ def create_layout(
             first_child_id = create_container_layout(container_layout.children[0])
 
             # Then create the layout.
-            [first_child_con] = find_cons_by_id(first_child_id)
+            (first_child_con,) = find_cons_by_id(connection, first_child_id)
             run_command_on(first_child_con, f"splith")
-            [first_child_con] = find_cons_by_id(first_child_id)
+            (first_child_con,) = find_cons_by_id(connection, first_child_id)
             run_command_on(first_child_con, f"layout {container_layout.layout}")
             layout_con = find_parent_con(first_child_con.id)
             layout_id = layout_con.id
@@ -221,7 +210,7 @@ def create_layout(
                 )
 
                 # Swap the child to the correct position if needed.
-                [layout_con] = find_cons_by_id(layout_id)
+                (layout_con,) = find_cons_by_id(connection, layout_id)
                 assert len(layout_con.nodes) >= index + 1, (
                     f"After moving the child, there should be at least {index + 1} windows on the layout, "
                     + "but found {len(layout_con.nodes)}"
@@ -252,7 +241,7 @@ def create_layout(
     # Set the layout of the workspace to horizontal to ensure moving containers to the workspace work correctly.
     workspace_id = workspace_layout._con_id
     assert workspace_id is not None, "The con_id should have been set earlier"
-    [workspace_con] = find_cons_by_id(workspace_id)
+    (workspace_con,) = find_cons_by_id(connection, workspace_id)
     assert (
         workspace_con.nodes
     ), f"The workspace {workspace_con.name} should not be empty at this point"
@@ -265,7 +254,7 @@ def create_layout(
         move_con_to_workspace(child_id)
 
         # Because we start at index == 0, there should now be at least index+1 windows on the workspace.
-        [workspace_con] = find_cons_by_id(workspace_id)
+        (workspace_con,) = find_cons_by_id(connection, workspace_id)
         assert len(workspace_con.nodes) >= index + 1
 
         # Swap the child to the correct position if needed.
@@ -291,7 +280,7 @@ def create_layout(
     ), f"The mark '{MARK}' was not removed after layout creation."
 
     # Look for windows that are not part of the layout.
-    [workspace_con] = find_cons_by_id(workspace_id)
+    (workspace_con,) = find_cons_by_id(connection, workspace_id)
     for con in workspace_con.descendants():
         if con.id not in layouted_ids:
             logger.warning(f"Container {con.name} ({con.id}) is not part of the layout")
