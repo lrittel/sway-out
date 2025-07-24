@@ -11,7 +11,11 @@ theme:
 
 plugins:
   - autorefs
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_if_no_docstring: true
 
 markdown_extensions:
   - pymdownx.highlight:
