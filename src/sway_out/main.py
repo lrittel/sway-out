@@ -40,8 +40,8 @@ def main_apply(ctx: click.Context, layout_file):
     for name, content in configuration.workspaces.items():
         replies = connection.command(f'workspace "{name}')
         check_replies(replies)
-        launched_applications = launch_applications_from_layout(connection, content)
-        create_layout(connection, name, content, launched_applications)
+        launch_applications_from_layout(connection, content)
+        create_layout(connection, name, content)
 
     if configuration.focused_workspace:
         if focused_workspace is None:
@@ -52,15 +52,8 @@ def main_apply(ctx: click.Context, layout_file):
             return
         replies = connection.command(f'workspace "{focused_workspace}"')
         check_replies(replies)
-        launched_applications = launch_applications_from_layout(
-            connection, configuration.focused_workspace
-        )
-        create_layout(
-            connection,
-            focused_workspace,
-            configuration.focused_workspace,
-            launched_applications,
-        )
+        launch_applications_from_layout(connection, configuration.focused_workspace)
+        create_layout(connection, focused_workspace, configuration.focused_workspace)
 
 
 @main.command("check")
