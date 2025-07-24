@@ -134,7 +134,7 @@ def wait_for_window(
         match: The matching expression to use.
         known_windows: Windows to ignore.
     Returns:
-        The Sway window ID of the new window.
+        The Sway ID of the new con.
     Raises:
         RuntimeError:
             If no matching window is found within the timeout duration.
@@ -150,7 +150,7 @@ def wait_for_window(
         logger.debug(f"Checking for matching windows")
         matching_windows = list(find_windows_on_workspace(match, workspace))
         logger.debug(
-            f"{len(matching_windows)} window(s) currently match the expression launch"
+            f"{len(matching_windows)} window(s) currently match the launch expression {match}"
         )
         for window in matching_windows:
             if window.id not in known_window_ids:
