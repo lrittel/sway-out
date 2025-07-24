@@ -19,13 +19,11 @@
         in
         pkgs.mkShell {
           packages = with pkgs; [
-act
-commitizen
+            act
             entr
             just
-poetry
-pre-commit
-            (python3.withPackages ( ps: with ps; [ ]))
+            poetry
+            (python3.withPackages (ps: with ps; [ ]))
           ];
 
           shellHook = ''
