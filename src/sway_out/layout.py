@@ -5,8 +5,7 @@ import logging
 
 from i3ipc import Con, Connection
 
-from sway_out.connection import find_cons_by_id, run_command_on
-
+from .connection import find_cons_by_id, run_command_on
 from .layout_files import ApplicationLaunchConfig, ContainerConfig, WorkspaceLayout
 from .matching import is_window_matching
 

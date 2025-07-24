@@ -31,6 +31,18 @@ class MarksMixin:
         ),
     ]
 
+    @property
+    def assigned_marks(self) -> list[str]:
+        """Get the marks assigned to this container.
+        Returns:
+            A list of marks assigned to this container.
+        """
+        if self.mark is not None:
+            return [self.mark]
+        if self.marks is not None:
+            return self.marks
+        return []
+
     @field_validator("mark", "marks", mode="after")
     @staticmethod
     def validate_mark_values(v: str | list[str] | None) -> str | list[str] | None:
