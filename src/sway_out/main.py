@@ -64,54 +64,5 @@ def main_apply(ctx: click.Context, layout_file):
         apply_marks(connection, content)
 
 
-@main.command("check")
-@click.argument("layout_file", type=click.File("rb"))
-@click.pass_context
-def main_check(ctx: click.Context, layout_file):
-    connection = ctx.find_object(Connection)
-    assert connection is not None
-    try:
-        configuration = load_layout_configuration(layout_file)
-    except (yaml.YAMLError, pydantic.ValidationError) as e:
-        click.echo(f"Failed to read layout configuration: {e}", err=True)
-        return
-
-    focused_workspace = get_focused_workspace(connection)
-
-    is_matching = True
-    tree = connection.get_tree()
-    for name, content in configuration.workspaces.items():
-        for workspace in tree.workspaces():
-            if workspace.name == name:
-                break
-        else:
-            click.echo(f"Workspace '{name}' not found.", err=True)
-            return
-
-        if has_matching_layout(workspace, content):
-            click.echo(f"Workspace '{name}' matches the layout.")
-        else:
-            click.echo(f"Workspace '{name}' does not match the layout.")
-            is_matching = False
-
-    if configuration.focused_workspace:
-        if focused_workspace is None:
-            click.echo(
-                "No focused workspace found. Cannot check focused workspace layout.",
-                err=True,
-            )
-            return
-        if has_matching_layout(focused_workspace, configuration.focused_workspace):
-            click.echo("Focused workspace matches its layout.")
-        else:
-            click.echo("Focused workspace does not match its layout.")
-            is_matching = False
-
-    if is_matching:
-        click.echo("All workspaces match their layouts.")
-    else:
-        click.echo("Some workspaces do not match their layouts.")
-
-
 if __name__ == "__main__":
     main()
