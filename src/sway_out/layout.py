@@ -95,24 +95,18 @@ def create_layout(
     connection: Connection,
     workspace_name: str,
     workspace_layout: WorkspaceLayout,
-    launched_applications: list[tuple[ApplicationLaunchConfig, int]],
 ) -> None:
     """Creates a layout on the given workspace using the already existing windows.
 
     The algorithm is similar to insertion sort.
 
+    All launch configurations have to have a con_id set.
+
     Parameters:
         connection: A connection to sway.
         workspace_name: The name of the workspace to create the layout on.
         workspace_layout: The layout to create.
-        launched_applications: A mapping from launch configurations to the window IDs of the launched windows.
     """
-
-    def find_id(application: ApplicationLaunchConfig) -> int:
-        for launch_config, con_id in launched_applications:
-            if launch_config is application:
-                return con_id
-        assert False, f"Window ID for application {application} not found in mapping"
 
     def find_cons_by_id(*con_ids: int) -> list[Con]:
         """Finds all containers with the given IDs."""
@@ -126,7 +120,11 @@ def create_layout(
         return result
 
     def find_con_for_application(container: ApplicationLaunchConfig) -> Con:
-        con_id = find_id(container)
+        con_id = container._con_id
+        assert con_id is not None, (
+            f"Application {container} has no con_id set. "
+            + "This is required for the layout creation."
+        )
         result = connection.get_tree().find_by_id(con_id)
         assert (
             result is not None

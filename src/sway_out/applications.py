@@ -24,35 +24,31 @@ LAUNCH_CHECK_INTERVAL_SECONDS = 0.5
 """How long to wait between checks for the application window."""
 
 
-def launch_applications_from_layout(
-    connection: Connection, layout: WorkspaceLayout
-) -> list[tuple[ApplicationLaunchConfig, int]]:
+def launch_applications_from_layout(connection: Connection, layout: WorkspaceLayout):
     """Launch the applications contained in the given layout.
+
+    The con_id of the launched applications are stored in
+    the launch configurations for later reference.
 
     Parameters:
         connection: A connection to Sway.
-        layout: The layout containing the applications to
-                launch.
-    Returns:
-        A list of pairs between the leaves of the layout and the
-        Sway IDs of the application windows.
+        layout: The layout containing the applications to launch.
+    Note:
+        This function modifies its argument.
+    See also:
+        [sway_out.applications.launch_application][]
     """
 
-    def go(
-        container: ApplicationLaunchConfig | ContainerConfig,
-    ) -> Generator[tuple[ApplicationLaunchConfig, int]]:
+    def go(container: ApplicationLaunchConfig | ContainerConfig) -> None:
         if isinstance(container, ApplicationLaunchConfig):
-            yield (container, launch_application(connection, container))
+            launch_application(connection, container)
         else:
             assert isinstance(container, ContainerConfig)
             for child in container.children:
-                yield from go(child)
+                go(child)
 
-    return [
-        (launch_config, window_id)
-        for container in layout.children
-        for (launch_config, window_id) in go(container)
-    ]
+    for child in layout.children:
+        go(child)
 
 
 def escape_argument(arg: str) -> str:
@@ -67,19 +63,20 @@ def escape_argument(arg: str) -> str:
     return f'"{arg}"'
 
 
-def launch_application(
-    connection: Connection, launch_config: ApplicationLaunchConfig
-) -> int:
+def launch_application(connection: Connection, launch_config: ApplicationLaunchConfig):
     """Launch an application on the current workspace.
+
+    The con_id of the launched application is stored in the
+    launch configuration for later reference.
 
     Parameters:
         connection: A connection to Sway.
         launch_config: The launch configuration for the application.
-    Returns:
-        The Sway window ID of the application's window.
     Raises:
         RuntimeError:
             If the application fails to start.
+    Note:
+        This function modifies its argument.
     """
 
     if isinstance(launch_config.cmd, str):
@@ -109,15 +106,15 @@ def launch_application(
 
     # Wait for the application to launch and the window to appear
     try:
-        window_id = wait_for_window(
+        con_id = wait_for_window(
             connection, workspace, launch_config.match, matching_windows_before
         )
     except RuntimeError as e:
         logger.error(f"Failed to launch application '{cmd}': {e}")
         raise RuntimeError(f"Failed to launch application '{cmd}': {e}") from e
     else:
-        logger.info(f"'{cmd}' successfully launched")
-        return window_id
+        logger.info(f"'{cmd}' successfully launched with con_id {con_id}")
+        launch_config._con_id = con_id
 
 
 def wait_for_window(

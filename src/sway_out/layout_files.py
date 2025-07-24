@@ -3,7 +3,7 @@
 from typing import Annotated, Literal, Self, TextIO
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 
 class WaylandWindowMatchExpression(BaseModel):
@@ -52,6 +52,7 @@ class ApplicationLaunchConfig(BaseModel):
             description="A filter to determine if the application is running.",
         ),
     ]
+    _con_id: Annotated[int | None, PrivateAttr(default=None)]
 
 
 class ContainerConfig(BaseModel):
