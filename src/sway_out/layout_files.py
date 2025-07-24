@@ -65,7 +65,22 @@ class WorkspaceLayout(BaseModel):
 
 
 class Layout(BaseModel):
-    workspaces: dict[str, WorkspaceLayout]
+    focused_workspace: Annotated[
+        WorkspaceLayout | None,
+        Field(
+            default=None,
+            title="Layout for the focused workspace",
+            description="If present, this layout gets applied to the workspace that is currently focused.",
+        ),
+    ]
+    workspaces: Annotated[
+        dict[str, WorkspaceLayout],
+        Field(
+            default={},
+            title="Workspace layouts",
+            description="These layouts get applied to the workspaces with the name of the respective key.",
+        ),
+    ]
 
 
 def load_layout_configuration(file: TextIO) -> Layout:
