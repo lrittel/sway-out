@@ -65,10 +65,10 @@ repos:
         language: system
         types: [python]
 
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.8.3
-    hooks:
       - id: commitizen
+        name: commitizen
+        entry: poetry run cz check --commit-msg-file
+        language: system
         stages: [commit-msg]
 
 # vim: ts=2:sw=2:et
