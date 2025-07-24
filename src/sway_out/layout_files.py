@@ -3,7 +3,48 @@
 from typing import Annotated, Literal, Self, TextIO
 
 import yaml
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
+
+
+class MarksMixin:
+    """Mixin to add marks to a model.
+
+    The fields related to marks are extracted to avoid duplication between
+    [sway_out.layout_files.ApplicationLaunchConfig][] and
+    [sway_out.layout_files.ContainerConfig][].
+    """
+
+    mark: Annotated[
+        str | None,
+        Field(
+            default=None,
+            title="Mark to assign",
+            description="A mark to assign to the container. Mutually exclusive with `marks`.",
+        ),
+    ]
+    marks: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            title="Marks to assign",
+            description="A list of marks to assign to the container. Mutually exclusive with `mark`.",
+        ),
+    ]
+
+    @field_validator("mark", "marks", mode="after")
+    @staticmethod
+    def validate_mark_values(v: str | list[str] | None) -> str | list[str] | None:
+        marks = v if isinstance(v, list) else [v or ""]
+        for mark in marks:
+            if len(mark) != 1:
+                raise ValueError(f"Mark must be a single character, got: {mark!r}")
+        return v
+
+    @model_validator(mode="after")
+    def validate_marks(self) -> Self:
+        if self.mark is not None and self.marks is not None:
+            raise ValueError("Cannot set both `mark` and `marks` at the same time.")
+        return self
 
 
 class WaylandWindowMatchExpression(BaseModel):
@@ -40,7 +81,7 @@ class WindowMatchExpression(BaseModel):
         return self
 
 
-class ApplicationLaunchConfig(BaseModel):
+class ApplicationLaunchConfig(BaseModel, MarksMixin):
     cmd: Annotated[
         list[str] | str,
         Field(title="Launch command", description="Command to launch the application."),
@@ -55,7 +96,7 @@ class ApplicationLaunchConfig(BaseModel):
     _con_id: Annotated[int | None, PrivateAttr(default=None)]
 
 
-class ContainerConfig(BaseModel):
+class ContainerConfig(BaseModel, MarksMixin):
     layout: Literal["splith", "splitv", "stacking", "tabbed"]
     children: "list[ApplicationLaunchConfig | ContainerConfig]"
 
