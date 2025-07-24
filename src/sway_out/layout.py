@@ -160,9 +160,11 @@ def create_layout(
             run_command_on(con, f"move right")
             # Make shure that the container is still on the workspace.
             [con] = find_cons_by_id(con_id)
-            assert (
-                con.workspace().id == workspace_id
-            ), f"Accidentally moved {con.name} ({con.id}) to another workspace ({con.workspace().name})"
+            assert con.workspace().id == workspace_id, (
+                f"Accidentally moved {con.name} ({con.id}) to another workspace "
+                + f"({con.workspace().name} ({con.workspace().id}) "
+                + f"instead of {workspace_name} ({workspace_id}))"
+            )
 
     def swap_cons(con_id: int, target_id: int):
         [con, target_con] = find_cons_by_id(con_id, target_id)
@@ -253,9 +255,15 @@ def create_layout(
     assert (
         len(workspace_cons_filtered) == 1
     ), f"Expected exactly one workspace with name {workspace_name}, found {len(workspace_cons_filtered)}"
-    workspace_id = workspace_cons_filtered[0].id
+    workspace_con = workspace_cons_filtered[0]
+    workspace_id = workspace_con.id
 
     # Start the layout creation at the workspace level.
+    # Set the layout of the workspace to horizontal to ensure moving containers to the workspace work correctly.
+    assert (
+        workspace_con.nodes
+    ), f"The workspace {workspace_name} should not be empty at this point"
+    run_command_on(workspace_con.nodes[0], "layout splith")
     for index, child_layout in enumerate(workspace_layout.children):
         logger.debug(f"Creating layout for workspace {workspace_name} ...")
         child_id = create_container_layout(child_layout)
@@ -271,8 +279,17 @@ def create_layout(
         target_con = workspace_con.nodes[index]
         swap_cons(child_id, target_con.id)
 
-        logger.info(f"Layout for workspace {workspace_name} done")
-        layouted_ids.add(workspace_id)
+    assert (
+        workspace_con.nodes
+    ), f"The workspace {workspace_name} should not be empty at this point"
+    if workspace_layout.layout is not None:
+        # Set the layout of the workspace to the one specified in the layout.
+        logger.debug(
+            f"Setting layout of workspace {workspace_name} to {workspace_layout.layout}"
+        )
+        run_command_on(workspace_con.nodes[0], f"layout {workspace_layout.layout}")
+    logger.info(f"Layout for workspace {workspace_name} done")
+    layouted_ids.add(workspace_id)
 
     # The mark should be freed up after the layout is created.
     marks_in_use = connection.get_marks()
