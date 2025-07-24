@@ -47,6 +47,15 @@ class MarksMixin:
         return self
 
 
+class ConIdMixin:
+    """Mixin to add con_id to a model.
+
+    The con_id is used to identify the container in Sway.
+    """
+
+    _con_id: Annotated[int | None, PrivateAttr(default=None)]
+
+
 class WaylandWindowMatchExpression(BaseModel):
     app_id: str | None = None
     title: str | None = None
@@ -81,7 +90,7 @@ class WindowMatchExpression(BaseModel):
         return self
 
 
-class ApplicationLaunchConfig(BaseModel, MarksMixin):
+class ApplicationLaunchConfig(BaseModel, MarksMixin, ConIdMixin):
     cmd: Annotated[
         list[str] | str,
         Field(title="Launch command", description="Command to launch the application."),
@@ -93,15 +102,14 @@ class ApplicationLaunchConfig(BaseModel, MarksMixin):
             description="A filter to determine if the application is running.",
         ),
     ]
-    _con_id: Annotated[int | None, PrivateAttr(default=None)]
 
 
-class ContainerConfig(BaseModel, MarksMixin):
+class ContainerConfig(BaseModel, MarksMixin, ConIdMixin):
     layout: Literal["splith", "splitv", "stacking", "tabbed"]
     children: "list[ApplicationLaunchConfig | ContainerConfig]"
 
 
-class WorkspaceLayout(BaseModel):
+class WorkspaceLayout(BaseModel, ConIdMixin):
     layout: Literal["splith", "splitv", "stacking", "tabbed"] | None = None
     children: list[ApplicationLaunchConfig | ContainerConfig]
 

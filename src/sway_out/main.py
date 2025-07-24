@@ -40,8 +40,11 @@ def main_apply(ctx: click.Context, layout_file):
     for name, content in configuration.workspaces.items():
         replies = connection.command(f'workspace "{name}')
         check_replies(replies)
+        workspace = get_focused_workspace(connection)
+        assert workspace is not None, "We are on a non-existing workspace?"
+        content._con_id = workspace.id
         launch_applications_from_layout(connection, content)
-        create_layout(connection, name, content)
+        create_layout(connection, content)
 
     if configuration.focused_workspace:
         if focused_workspace is None:
@@ -52,8 +55,10 @@ def main_apply(ctx: click.Context, layout_file):
             return
         replies = connection.command(f'workspace "{focused_workspace}"')
         check_replies(replies)
-        launch_applications_from_layout(connection, configuration.focused_workspace)
-        create_layout(connection, focused_workspace, configuration.focused_workspace)
+        content = connection.focused_workspace
+        content._con_id = workspace.id
+        launch_applications_from_layout(connection, content)
+        create_layout(connection, configuration.focused_workspace)
 
 
 @main.command("check")
@@ -93,12 +98,7 @@ def main_check(ctx: click.Context, layout_file):
                 err=True,
             )
             return
-        for workspace in tree.workspaces():
-            if workspace.name == name:
-                break
-        else:
-            assert False, "Focused workspace should always be in the tree"
-        if has_matching_layout(workspace, configuration.focused_workspace):
+        if has_matching_layout(focused_workspace, configuration.focused_workspace):
             click.echo("Focused workspace matches its layout.")
         else:
             click.echo("Focused workspace does not match its layout.")
