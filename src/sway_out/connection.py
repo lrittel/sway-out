@@ -13,6 +13,7 @@ def run_command_on(con: Con, command: str) -> None:
     Arguments:
         con: The container to run the command on.
         command: The command to run.
+
     Raises:
         RuntimeError: If the command fails.
     """
@@ -26,6 +27,7 @@ def check_replies(replies: list[CommandReply]):
 
     Arguments:
         replies: The replies to check.
+
     Raises:
         RuntimeError: If at least one reply indicates a failure.
     """
@@ -39,6 +41,7 @@ def get_focused_workspace(connection: Connection) -> str | None:
     """Get the currently focused workspace.
     Arguments:
         connection: The Sway connection.
+
     Returns:
         The name of the focused workspace, or None if no workspace is focused.
     """

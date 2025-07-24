@@ -89,11 +89,13 @@ def load_layout_configuration(file: TextIO) -> Layout:
 
     Arguments:
         file: The source file.
+
     Raises:
         yaml.YAMLError:
             When the file does not contain valid YAML.
         pydantic.ValidationError:
             When the YAML is ill-formed.
+
     Returns:
         The configuration object.
     """

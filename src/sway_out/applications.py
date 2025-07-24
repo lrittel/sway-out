@@ -18,10 +18,18 @@ from .matching import find_current_workspace, find_windows_on_workspace
 logger = logging.getLogger(__name__)
 
 LAUNCH_TIMEOUT_SECONDS = 10
-"""How long to wait for the application to launch before giving up."""
+"""How long to wait for the application to launch before giving up.
+
+See also:
+  - [wait_for_window][sway_out.applications.wait_for_window]
+"""
 
 LAUNCH_CHECK_INTERVAL_SECONDS = 0.5
-"""How long to wait between checks for the application window."""
+"""How long to wait between checks for the application window.
+
+See also:
+  - [wait_for_window][sway_out.applications.wait_for_window]
+"""
 
 
 def launch_applications_from_layout(connection: Connection, layout: WorkspaceLayout):
@@ -33,10 +41,12 @@ def launch_applications_from_layout(connection: Connection, layout: WorkspaceLay
     Parameters:
         connection: A connection to Sway.
         layout: The layout containing the applications to launch.
+
     Note:
         This function modifies its argument.
+
     See also:
-        [sway_out.applications.launch_application][]
+        - [sway_out.applications.launch_application][]
     """
 
     def go(container: ApplicationLaunchConfig | ContainerConfig) -> None:
@@ -56,6 +66,7 @@ def escape_argument(arg: str) -> str:
 
     Parameters:
         arg: The argument string.
+
     Returns:
         The argument string with some characters escaped.
     """
@@ -72,9 +83,11 @@ def launch_application(connection: Connection, launch_config: ApplicationLaunchC
     Parameters:
         connection: A connection to Sway.
         launch_config: The launch configuration for the application.
+
     Raises:
         RuntimeError:
             If the application fails to start.
+
     Note:
         This function modifies its argument.
     """
@@ -130,8 +143,10 @@ def wait_for_window(
         workspace: The workspace tree node to look in.
         match: The matching expression to use.
         known_windows: Windows to ignore.
+
     Returns:
         The Sway ID of the new con.
+
     Raises:
         RuntimeError:
             If no matching window is found within the timeout duration.

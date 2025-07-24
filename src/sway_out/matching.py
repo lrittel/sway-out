@@ -45,6 +45,7 @@ def is_window_matching(con: Con, match_expression: WindowMatchExpression) -> boo
     Parameters:
         con: The window to check.
         match_expression: The match expression to use.
+
     Returns:
         True if the window matches the expression, False otherwise.
     """
@@ -91,6 +92,7 @@ def find_current_workspace(connection: Connection) -> Con | None:
 
     Parameters:
         connection: A connection to Sway
+
     Returns:
         The tree node of the current workspace or `None` if it is not available.
     """
