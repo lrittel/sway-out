@@ -11,6 +11,7 @@ from .applications import launch_applications_from_layout
 from .connection import check_replies, get_focused_workspace
 from .layout import create_layout, has_matching_layout
 from .layout_files import load_layout_configuration
+from .marks import apply_marks
 
 
 @click.group()
@@ -45,6 +46,7 @@ def main_apply(ctx: click.Context, layout_file):
         content._con_id = workspace.id
         launch_applications_from_layout(connection, content)
         create_layout(connection, content)
+        apply_marks(connection, content)
 
     if configuration.focused_workspace:
         if focused_workspace is None:
@@ -58,7 +60,8 @@ def main_apply(ctx: click.Context, layout_file):
         content = connection.focused_workspace
         content._con_id = workspace.id
         launch_applications_from_layout(connection, content)
-        create_layout(connection, configuration.focused_workspace)
+        create_layout(connection, content)
+        apply_marks(connection, content)
 
 
 @main.command("check")
