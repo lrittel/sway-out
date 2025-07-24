@@ -1,9 +1,13 @@
 site_name: "sway-out"
 
+repo_url: https://github.com/lrittel/sway-out
+
 theme:
   name: "material"
   features:
     - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
 
 plugins:
   - autorefs
