@@ -287,6 +287,21 @@ termcolor = ">=1.1.0,<4.0.0"
 tomlkit = ">=0.5.3,<1.0.0"
 
 [[package]]
+name = "cz-extended-conventional"
+version = "0.1.0rc4"
+description = "An extended format of Commitizen's builtin cz_conventional_commit format."
+optional = false
+python-versions = "<4,>=3.12"
+groups = ["dev"]
+files = [
+    {file = "cz_extended_conventional-0.1.0rc4-py3-none-any.whl", hash = "sha256:d6c02722f916278c75a620ebb4200c41f6109734dbbe2102c76c7134bc9c6ea6"},
+    {file = "cz_extended_conventional-0.1.0rc4.tar.gz", hash = "sha256:016560256881168a2ed607c7ad19f4bfbb108d900c3c094e65a29b6a7c01a8fc"},
+]
+
+[package.dependencies]
+commitizen = ">=4.8.2,<5.0.0"
+
+[[package]]
 name = "decli"
 version = "0.6.3"
 description = "Minimal, easy-to-use, declarative cli tool"
@@ -1392,4 +1407,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4"
-content-hash = "34cad4c4fe2aaaa28cf6cebe7fe2721be746cd7ba416267bd6acc076e8f513bf"
+content-hash = "fe025194aa135b7152d50f88c00b6467c13669b134754c9d32f0911231d4c8a4"
