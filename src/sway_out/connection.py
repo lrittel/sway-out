@@ -37,17 +37,23 @@ def check_replies(replies: list[CommandReply]):
             raise RuntimeError(f"Command failed: {reply.error}")
 
 
-def get_focused_workspace(connection: Connection) -> str | None:
+def get_focused_workspace(connection: Connection) -> Con | None:
     """Get the currently focused workspace.
     Arguments:
         connection: The Sway connection.
 
     Returns:
-        The name of the focused workspace, or None if no workspace is focused.
+        The con of the focused workspace, or None if no workspace is focused.
     """
 
-    workspaces = connection.get_workspaces()
-    for workspace in workspaces:
-        if workspace.focused:
-            return workspace.name
-    return None
+    tree = connection.get_tree()
+    focused = tree.find_focused()
+    if focused is None:
+        logger.warning("No focused con found.")
+        return None
+    if focused.type != "workspace":
+        focused = focused.workspace()
+    if focused is None:
+        logger.warning("No focused workspace found.")
+        return None
+    return focused
