@@ -9,7 +9,7 @@ from i3ipc import Connection
 
 from .applications import launch_applications_from_layout
 from .connection import check_replies
-from .layout import has_matching_layout
+from .layout import create_layout, has_matching_layout
 from .layout_files import load_layout_configuration
 
 
@@ -39,6 +39,7 @@ def main_apply(ctx: click.Context, layout_file):
         replies = connection.command(f'workspace "{name}')
         check_replies(replies)
         launched_applications = launch_applications_from_layout(connection, content)
+        create_layout(connection, name, content, launched_applications)
 
 
 @main.command("check")

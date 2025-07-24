@@ -2,10 +2,22 @@
 
 import logging
 
-from i3ipc import CommandReply
+from i3ipc import CommandReply, Con
 
 logger = logging.getLogger(__name__)
 
+def run_command_on(con: Con, command: str) -> None:
+    """Run a command on the given container and checks the reply.
+
+    Arguments:
+        con: The container to run the command on.
+        command: The command to run.
+    Raises:
+        RuntimeError: If the command fails.
+    """
+    logger.debug(f"Running command '{command}' on container {con.name} ({con.id})")
+    replies = con.command(command)
+    check_replies(replies)
 
 def check_replies(replies: list[CommandReply]):
     """Check a list of replies for errors.
