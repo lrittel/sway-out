@@ -2,7 +2,6 @@
 
 import logging
 import time
-from collections.abc import Generator
 
 from i3ipc import Con, Connection
 

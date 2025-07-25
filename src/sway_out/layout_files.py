@@ -3,7 +3,10 @@
 from typing import Annotated, Literal, Self, TextIO
 
 import yaml
+from i3ipc import Connection
 from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
+
+from sway_out.connection import get_focused_workspace
 
 
 class MarksMixin:
@@ -163,3 +166,43 @@ def load_layout_configuration(file: TextIO) -> Layout:
 
     obj = yaml.load(file, yaml.SafeLoader)
     return Layout.model_validate(obj)
+
+
+def map_workspaces(
+    connection: Connection, layout: Layout
+) -> dict[str, WorkspaceLayout]:
+    """Map the workspace names from the layout to the actual workspaces.
+
+    The currently focused workspace is used to resolve
+    [sway_out.layout_files.Layout.focused_workspace][].
+
+    con_ids stay unset if the workspace does not exist in Sway.
+
+    Arguments:
+        connection: A connection to Sway.
+        layout: The layout to map.
+
+    Returns:
+        A mapping of workspace layouts with the con_id set to the id of the
+        corresponding workspace to the name of the respective workspace.
+
+    Note:
+        The layout objects do not get copied, so `layout` is modified.
+    """
+
+    def go():
+        for workspace_name, workspace_layout in layout.workspaces.items():
+            for workspace in tree.workspaces():
+                if workspace.name == workspace_name:
+                    workspace_layout._con_id = workspace.id
+                    break
+            yield workspace_name, workspace_layout
+        if layout.focused_workspace is not None:
+            focused_workspace_layout = layout.focused_workspace
+            focused_worksapce_con = get_focused_workspace(connection)
+            assert focused_worksapce_con is not None, "No focused workspace found?"
+            focused_workspace_name = focused_worksapce_con.name
+            yield focused_workspace_name, focused_workspace_layout
+
+    tree = connection.get_tree()
+    return dict(go())

@@ -8,10 +8,13 @@ import yaml
 from i3ipc import Connection
 
 from .applications import launch_applications_from_layout
-from .connection import check_replies, get_focused_workspace
-from .layout import create_layout, has_matching_layout
-from .layout_files import load_layout_configuration
+from .connection import run_command
+from .layout import create_layout
+from .layout_files import load_layout_configuration, map_workspaces
 from .marks import apply_marks
+from .matching import find_current_workspace
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -36,32 +39,20 @@ def main_apply(ctx: click.Context, layout_file):
         click.echo(f"Failed to read layout configuration: {e}", err=True)
         return
 
-    focused_workspace = get_focused_workspace(connection)
+    workspace_layout_mapping = map_workspaces(connection, configuration)
 
-    for name, content in configuration.workspaces.items():
-        replies = connection.command(f'workspace "{name}')
-        check_replies(replies)
-        workspace = get_focused_workspace(connection)
-        assert workspace is not None, "We are on a non-existing workspace?"
-        content._con_id = workspace.id
-        launch_applications_from_layout(connection, content)
-        create_layout(connection, content)
-        apply_marks(connection, content)
-
-    if configuration.focused_workspace:
-        if focused_workspace is None:
-            click.echo(
-                "No focused workspace found. Cannot apply focused workspace layout.",
-                err=True,
-            )
-            return
-        replies = connection.command(f'workspace "{focused_workspace}"')
-        check_replies(replies)
-        content = connection.focused_workspace
-        content._con_id = workspace.id
-        launch_applications_from_layout(connection, content)
-        create_layout(connection, content)
-        apply_marks(connection, content)
+    for workspace_name, workspace_layout in workspace_layout_mapping.items():
+        run_command(connection, f"workspace {workspace_name}")
+        workspace_con = find_current_workspace(connection)
+        workspace_layout._con_id = workspace_con.id
+        assert workspace_con is not None, "No current workspace found?"
+        logger.info("Applying layout for workspace: %s", workspace_name)
+        launch_applications_from_layout(connection, workspace_layout)
+        create_layout(connection, workspace_layout)
+        apply_marks(connection, workspace_layout)
+    logger.info(
+        f"Successfully applied layout for {len(workspace_layout_mapping)} workspace(s)"
+    )
 
 
 if __name__ == "__main__":
