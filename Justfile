@@ -1,17 +1,22 @@
+# Run the application.
+[group('app')]
+run *args:
+    uv run sway-out {{ args }}
+
 # Build the documentation.
 [group('docs')]
 build-docs:
-    poetry run mkdocs build
+    uv run mkdocs build
 
 # Serves the documentation on a local webserver.
 [group('docs')]
 serve-docs:
-    poetry run mkdocs serve --watch ./src
+    uv run mkdocs serve --watch ./src
 
 # Runs the full test suite.
 [group('tests')]
 run-tests *PYTEST_FLAGS:
-    poetry run pytest
+    uv run pytest
 
 # Runs the full test suite whenever a file changes.
 [group('tests')]
@@ -29,11 +34,11 @@ watch-tests *PYTEST_FLAGS:
 # Run the pre-commit hook manually.
 [group('ci')]
 run-pre-commit:
-    poetry run pre-commit run
+    uv run pre-commit run
 
 # Run the pre-commit hook manually on all files.
 run-pre-commit-all:
-    poetry run pre-commit run --all
+    uv run pre-commit run --all
 
 # Run the GitHub Actions workflows locally.
 [group('ci')]
