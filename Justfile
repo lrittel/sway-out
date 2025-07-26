@@ -31,12 +31,18 @@ watch-tests *PYTEST_FLAGS:
         sleep 0.5
     done
 
+# Run cz to create a new commit interactively.
+[group('git')]
+commit *args:
+    uv run cz commit {{ args }}
+
 # Run the pre-commit hook manually.
-[group('ci')]
+[group('git')]
 run-pre-commit:
     uv run pre-commit run
 
 # Run the pre-commit hook manually on all files.
+[group('git')]
 run-pre-commit-all:
     uv run pre-commit run --all
 
