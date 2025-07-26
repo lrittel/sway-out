@@ -90,6 +90,8 @@
           packages =
             (with pkgs; [
               act
+              cabal-install # required by the nixfmt pre-commit hook
+              ghc # required by the nixfmt pre-commit hook
               entr
               just
               uv
