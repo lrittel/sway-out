@@ -90,11 +90,23 @@
           packages =
             (with pkgs; [
               act
-              cabal-install # required by the nixfmt pre-commit hook
-              ghc # required by the nixfmt pre-commit hook
               entr
               just
               uv
+
+              # required by the nixfmt pre-commit hook
+              cabal-install
+              ghc
+
+              # required by pycairo
+              ninja
+              cmake
+              cairo
+              pkg-config
+
+              # required to use libnotify
+              libnotify
+              gobject-introspection
             ])
             ++ [ python ];
 

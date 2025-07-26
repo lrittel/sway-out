@@ -80,7 +80,7 @@ def find_con_by_id(connection: Connection, con_id: int) -> Con:
 
     Arguments:
         connection: The Sway connection to use.
-        con_ids: The con_ids of the containers to find.
+        con_id: The con_ids of the containers to find.
 
     Returns:
         A list of containers with the given con_ids. The order of the list matches
