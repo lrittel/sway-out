@@ -84,3 +84,16 @@ def progress_notification(stage: str, text: str) -> Generator[ProgressNotificati
         raise
     else:
         notification.finish()
+
+
+def error_notification(title: str, text: str) -> None:
+    """Show a notification indicating an error.
+
+    Parameters:
+        title: The title of the notification.
+        text: The error message.
+    """
+
+    notification = Notify.Notification.new(title, text)
+    notification.set_urgency(Notify.Urgency.CRITICAL)
+    notification.show()
