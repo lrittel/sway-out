@@ -14,6 +14,7 @@ class ProgressNotification:
         self.summary = stage
         self.text = text
         self.notification: Notify.Notification = None
+        self.successful = True
 
     def start(self):
         """Start the progress indicator.
@@ -21,7 +22,7 @@ class ProgressNotification:
         Without calling this method first, `self.update()` is a no-op.
         """
 
-        self.notification = Notify.Notification.new(self.text, f"{self.text} ...")
+        self.notification = Notify.Notification.new(self.summary, f"{self.text} ...")
         self.notification.set_timeout(Notify.EXPIRES_NEVER)
         self.notification.show()
 
@@ -42,8 +43,11 @@ class ProgressNotification:
         """
 
         if self.notification is not None:
-            self.notification.update(self.summary, "Completed successfully.")
-            self.notification.set_timeout(Notify.EXPIRES_DEFAULT)
+            if self.successful:
+                self.notification.update(self.summary, "Completed successfully.")
+            else:
+                self.notification.update(self.summary, "Completed with errors.")
+
             self.notification.show()
 
     def error(self, error_message: str):
@@ -55,7 +59,7 @@ class ProgressNotification:
         if self.notification is not None:
             self.notification.update(
                 self.summary,
-                f"{self.text} - Error: {error_message}",
+                (f"{self.text} - " if self.text else "") + f"Error: {error_message}",
             )
             self.notification.set_urgency(Notify.Urgency.CRITICAL)
             self.notification.set_timeout(Notify.EXPIRES_DEFAULT)

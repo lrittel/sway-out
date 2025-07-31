@@ -7,6 +7,7 @@ from . import (
     marks,
     matching,
     notifications,
+    utils,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "marks",
     "matching",
     "notifications",
+    "utils",
 ]

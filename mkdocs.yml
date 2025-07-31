@@ -37,3 +37,4 @@ nav:
     - sway_out.marks: reference/sway_out.marks.md
     - sway_out.matching: reference/sway_out.matching.md
     - sway_out.notifications: reference/sway_out.notifications.md
+    - sway_out.utils: reference/sway_out.utils.md

@@ -6,7 +6,7 @@ import yaml
 from i3ipc import Connection
 from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
-from sway_out.connection import get_focused_workspace
+from .connection import get_focused_workspace
 
 
 class MarksMixin:
@@ -71,6 +71,41 @@ class ConIdMixin:
     _con_id: Annotated[int | None, PrivateAttr(default=None)]
 
 
+class LayoutParentMixin:
+    """A mixin to add layout-parent-related fields to a model."""
+
+    children: "list[ApplicationLaunchConfig | ContainerConfig]"
+    layout: Literal["splith", "splitv", "stacking", "tabbed"]
+
+    @model_validator(mode="after")
+    def validate_percent(self) -> Self:
+        if self.layout in ["splith", "splitv"]:
+            percent_sum = sum(child.percent or 0 for child in self.children)
+            any_none = any(child.percent is None for child in self.children)
+            if not any_none and percent_sum != 100:
+                raise ValueError(
+                    "If a percentage is set on all children of a"
+                    + " layout, the percentages have add up to 100"
+                )
+        elif self.layout in ["stacking", "tabbed"]:
+            any_percent = any(child.percent is not None for child in self.children)
+            if any_percent:
+                raise ValueError(
+                    "Percentages are not allowed in stacking or tabbed layouts"
+                )
+        else:
+            assert (
+                False
+            ), "Unknown layout type, this should have been caught by the validation."
+        return self
+
+
+class LayoutChildMixin:
+    """A mixin to add layout-child-related fields to a model."""
+
+    percent: Annotated[int | None, Field(default=None, ge=0, le=100)]
+
+
 class WaylandWindowMatchExpression(BaseModel):
     app_id: str | None = None
     title: str | None = None
@@ -105,7 +140,7 @@ class WindowMatchExpression(BaseModel):
         return self
 
 
-class ApplicationLaunchConfig(BaseModel, MarksMixin, ConIdMixin):
+class ApplicationLaunchConfig(BaseModel, MarksMixin, ConIdMixin, LayoutChildMixin):
     cmd: Annotated[
         list[str] | str,
         Field(title="Launch command", description="Command to launch the application."),
@@ -119,14 +154,14 @@ class ApplicationLaunchConfig(BaseModel, MarksMixin, ConIdMixin):
     ]
 
 
-class ContainerConfig(BaseModel, MarksMixin, ConIdMixin):
-    layout: Literal["splith", "splitv", "stacking", "tabbed"]
-    children: "list[ApplicationLaunchConfig | ContainerConfig]"
+class ContainerConfig(
+    BaseModel, MarksMixin, ConIdMixin, LayoutParentMixin, LayoutChildMixin
+):
+    pass
 
 
-class WorkspaceLayout(BaseModel, ConIdMixin):
-    layout: Literal["splith", "splitv", "stacking", "tabbed"] | None = None
-    children: list[ApplicationLaunchConfig | ContainerConfig]
+class WorkspaceLayout(BaseModel, ConIdMixin, LayoutParentMixin):
+    pass
 
 
 class Layout(BaseModel):

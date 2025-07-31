@@ -6,7 +6,7 @@ from collections.abc import Generator
 
 from i3ipc import Con, Connection
 
-from .layout_files import ApplicationLaunchConfig, WindowMatchExpression
+from .layout_files import WindowMatchExpression
 
 logger = logging.getLogger(__name__)
 
