@@ -49,10 +49,10 @@ repos:
     hooks:
       - id: uv-lock
 
-  - repo: https://github.com/NixOS/nixfmt
-    rev: v1.0.0
-    hooks:
-      - id: nixfmt
+  # - repo: https://github.com/NixOS/nixfmt
+  #   rev: v1.0.0
+  #   hooks:
+  #     - id: nixfmt
 
   # Use the version installed by poetry to have consistent versions between
   # manual, CI and pre-commit use.
