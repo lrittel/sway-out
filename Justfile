@@ -36,6 +36,11 @@ watch-tests *PYTEST_FLAGS:
 commit *args:
     uv run cz commit {{ args }}
 
+# Run the pre-commit utility.
+[group('git')]
+pre-commit *args:
+    uv run pre-commit {{ args }}
+
 # Run the pre-commit hook manually.
 [group('git')]
 run-pre-commit:
@@ -46,7 +51,17 @@ run-pre-commit:
 run-pre-commit-all:
     uv run pre-commit run --all
 
-# Run the GitHub Actions workflows locally.
+# List all available workflows.
 [group('ci')]
-run-workflows:
-    act
+list-workflows:
+    act --list
+
+# Run all workflows.
+[group('ci')]
+run-all-workflows *act_args:
+    act {{ act_args }}
+
+# Run a specific workflow (see list-workflows).
+[group('ci')]
+run-workflow name *act_args:
+    act --job "{{ name }}" {{ act_args }}
