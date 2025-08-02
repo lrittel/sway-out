@@ -1,20 +1,26 @@
 """Utilities to indicate progress."""
 
+import logging
+import subprocess
 from contextlib import contextmanager
-from typing import Generator, final
+from typing import Generator, Literal, final
 
-from gi.repository import Notify
+from sway_out.utils import PROG_NAME
+
+logger = logging.getLogger(__name__)
 
 
 @final
 class ProgressNotification:
     """Represents a notification showing progress."""
 
+    EXPIRE_TIME = 60_000  # 60 seconds
+
     def __init__(self, stage: str, text: str):
         self.summary = stage
         self.text = text
-        self.notification: Notify.Notification = None
         self.successful = True
+        self.notification_id: int | None = None
 
     def start(self):
         """Start the progress indicator.
@@ -22,9 +28,11 @@ class ProgressNotification:
         Without calling this method first, `self.update()` is a no-op.
         """
 
-        self.notification = Notify.Notification.new(self.summary, f"{self.text} ...")
-        self.notification.set_timeout(Notify.EXPIRES_NEVER)
-        self.notification.show()
+        self.notification_id = _run_notify_send(
+            summary=self.summary,
+            text=f"{self.text} ...",
+            expire_time=self.EXPIRE_TIME,
+        )
 
     def update(self, progress: int, total: int):
         """Update the progress.
@@ -32,9 +40,13 @@ class ProgressNotification:
         Does nothing if `self.start` is not called first.
         """
 
-        if self.notification is not None:
-            self.notification.update(self.summary, f"{self.text} {progress}/{total}")
-            self.notification.show()
+        if self.notification_id is not None:
+            self.notification_id = _run_notify_send(
+                summary=self.summary,
+                text=f"{self.text} {progress}/{total}",
+                expire_time=self.EXPIRE_TIME,
+                replace_id=self.notification_id,
+            )
 
     def finish(self):
         """Show that the process has finished.
@@ -42,13 +54,21 @@ class ProgressNotification:
         Does nothing if `self.start` is not called first.
         """
 
-        if self.notification is not None:
+        if self.notification_id is not None:
+            # We are intentionally not explicitly passing an expire_time to
+            # respect use the user's configuration.
             if self.successful:
-                self.notification.update(self.summary, "Completed successfully.")
+                self.notification_id = _run_notify_send(
+                    summary=self.summary,
+                    text="Completed successfully.",
+                    replace_id=self.notification_id,
+                )
             else:
-                self.notification.update(self.summary, "Completed with errors.")
-
-            self.notification.show()
+                self.notification_id = _run_notify_send(
+                    summary=self.summary,
+                    text="Completed with errors.",
+                    replace_id=self.notification_id,
+                )
 
     def error(self, error_message: str):
         """Show that an error has occurred.
@@ -56,14 +76,14 @@ class ProgressNotification:
         Does nothing if `self.start` is not called first.
         """
 
-        if self.notification is not None:
-            self.notification.update(
-                self.summary,
-                (f"{self.text} - " if self.text else "") + f"Error: {error_message}",
+        if self.notification_id is not None:
+            self.notification_id = _run_notify_send(
+                summary=self.summary,
+                text=(f"{self.text} - " if self.text else "")
+                + f"Error: {error_message}",
+                urgency="critical",
+                replace_id=self.notification_id,
             )
-            self.notification.set_urgency(Notify.Urgency.CRITICAL)
-            self.notification.set_timeout(Notify.EXPIRES_DEFAULT)
-            self.notification.show()
 
 
 @contextmanager
@@ -98,6 +118,30 @@ def error_notification(title: str, text: str) -> None:
         text: The error message.
     """
 
-    notification = Notify.Notification.new(title, text)
-    notification.set_urgency(Notify.Urgency.CRITICAL)
-    notification.show()
+    _run_notify_send(summary=title, text=text, urgency="critical")
+
+
+def _run_notify_send(
+    summary: str,
+    text: str,
+    urgency: Literal["low", "normal", "critical"] = "normal",
+    replace_id: int | None = None,
+    expire_time: int | None = None,
+):
+    command = [
+        "notify-send",
+        f"--app-name={PROG_NAME}",
+        f"--urgency={urgency}",
+        "--print-id",
+        summary,
+        text,
+    ]
+    if replace_id is not None:
+        command.append(f"--replace-id={replace_id}")
+    if expire_time is not None:
+        command.append(f"--expire-time={expire_time}")
+    result = subprocess.run(command, capture_output=True, text=True)
+    result.check_returncode()
+    notification_id = int(result.stdout.strip())
+    logger.debug(f"Showing notification with ID {notification_id}: {summary} - {text}")
+    return notification_id

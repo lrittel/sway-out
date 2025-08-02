@@ -2,6 +2,8 @@
 
 from i3ipc import Con
 
+PROG_NAME = "sway-out"
+
 
 def is_window(con: Con) -> bool:
     """Check if a container is a window.

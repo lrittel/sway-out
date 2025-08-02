@@ -98,15 +98,8 @@
               cabal-install
               ghc
 
-              # required by pycairo
-              ninja
-              cmake
-              cairo
-              pkg-config
-
-              # required to use libnotify
+              # for notify-send
               libnotify
-              gobject-introspection
             ])
             ++ [ python ];
 

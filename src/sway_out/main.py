@@ -4,12 +4,8 @@ import logging
 from dataclasses import dataclass
 
 import click
-import gi
 import pydantic
 import yaml
-
-gi.require_version("Notify", "0.7")
-from gi.repository import Notify
 from i3ipc import Connection
 
 from .applications import launch_applications_from_layout
@@ -19,13 +15,9 @@ from .layout_files import load_layout_configuration, map_workspaces
 from .marks import apply_marks
 from .matching import find_current_workspace
 from .notifications import error_notification, progress_notification
-from .utils import get_con_description
+from .utils import PROG_NAME, get_con_description
 
 logger = logging.getLogger(__name__)
-
-PROG_NAME = "sway-out"
-
-Notify.init(PROG_NAME)
 
 
 @dataclass
