@@ -174,13 +174,25 @@ class Layout(BaseModel):
         ),
     ]
     workspaces: Annotated[
-        dict[str, WorkspaceLayout],
+        dict[str, WorkspaceLayout] | None,
         Field(
-            default={},
+            default=None,
             title="Workspace layouts",
             description="These layouts get applied to the workspaces with the name of the respective key.",
         ),
     ]
+
+    @model_validator(mode="after")
+    def validate_workspaces(self) -> Self:
+        if self.focused_workspace is not None and self.workspaces is not None:
+            raise ValueError(
+                "Cannot set both `focused_workspace` and `workspaces` at the same time."
+            )
+        if self.focused_workspace is None and self.workspaces is None:
+            raise ValueError(
+                "Either `focused_workspace` or `workspaces` has to be present."
+            )
+        return self
 
 
 def load_layout_configuration(file: TextIO) -> Layout:
