@@ -21,6 +21,11 @@
       inputs.uv2nix.follows = "uv2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nix-github-actions = {
+      url = "github:nix-community/nix-github-actions";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -30,6 +35,7 @@
       pyproject-nix,
       uv2nix,
       pyproject-build-systems,
+      nix-github-actions,
       ...
     }:
     let
@@ -119,5 +125,7 @@
             unset PYTHONPATH
           '';
         };
+
+      githubActions = nix-github-actions.lib.mkGithubMatrix { checks = self.packages; };
     };
 }
