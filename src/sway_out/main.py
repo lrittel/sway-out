@@ -8,9 +8,15 @@ import pydantic
 import yaml
 from i3ipc import Connection
 
-from .applications import launch_applications_from_layout
+from .applications import launch_applications_from_layout, match_existing_windows
 from .connection import find_con_by_id, run_command, run_command_on
-from .layout import check_layout, create_layout, find_leftover_windows, resize_layout
+from .layout import (
+    check_layout,
+    create_layout,
+    dissolve_layout,
+    find_leftover_windows,
+    resize_layout,
+)
 from .layout_files import (
     find_focused_element_in_layout,
     load_layout_configuration,
@@ -75,6 +81,10 @@ def main_apply(ctx: click.Context, layout_file):
             workspace_con = find_current_workspace(connection)
             workspace_layout._con_id = workspace_con.id
             assert workspace_con is not None, "No current workspace found?"
+            logging.debug("Matching existing windows on workspace: %s", workspace_name)
+            match_existing_windows(workspace_con, workspace_layout)
+            logging.debug("Dissolving layout for workspace: %s", workspace_name)
+            dissolve_layout(connection, workspace_con)
             logger.info("Applying layout for workspace: %s", workspace_name)
             launch_applications_from_layout(connection, workspace_layout)
             create_layout(connection, workspace_layout)

@@ -94,11 +94,7 @@ def find_con_by_id(connection: Connection, con_id: int) -> Con:
         containers at once.
     """
 
-    tree = connection.get_tree()
-    result = tree.find_by_id(con_id)
-    if not result:
-        raise RuntimeError(f"Container with con_id {con_id} not found in tree")
-    return result
+    return find_cons_by_id(connection, con_id)[0]
 
 
 def find_cons_by_id(connection: Connection, *con_ids: int) -> tuple[Con, ...]:
@@ -119,8 +115,8 @@ def find_cons_by_id(connection: Connection, *con_ids: int) -> tuple[Con, ...]:
     Raises:
         RuntimeError: If a container with a given con_id is not found in the tree.
     """
-    tree = connection.get_tree()
-    result = tuple(tree.find_by_id(con_id) for con_id in con_ids)
+
+    result = find_cons_by_id_if_exists(connection, *con_ids)
     missing_ids = [con_id for con_id, con in zip(con_ids, result) if con is None]
     if missing_ids:
         raise RuntimeError(
@@ -128,3 +124,25 @@ def find_cons_by_id(connection: Connection, *con_ids: int) -> tuple[Con, ...]:
         )
     assert None not in result
     return result
+
+
+def find_cons_by_id_if_exists(
+    connection: Connection, *con_ids: int
+) -> tuple[Con | None, ...]:
+    """Finds all containers with the given con_ids if they exist.
+    This function is similar to `find_cons_by_id`, but it does not raise an error
+    if a container with a given con_id is not found. Instead, it returns None for
+    those containers.
+
+    Arguments:
+        connection: The Sway connection to use.
+        con_ids: The con_ids of the containers to find.
+
+    Returns:
+        A list of containers with the given con_ids or `None` if the respective
+        con_id does not match that of an existing container. The order of the
+        list matches the order of the con_ids.
+    """
+
+    tree = connection.get_tree()
+    return tuple(tree.find_by_id(con_id) for con_id in con_ids)

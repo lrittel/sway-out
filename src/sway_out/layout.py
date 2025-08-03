@@ -6,9 +6,14 @@ from typing import Literal
 
 from i3ipc import Con, Connection
 
-from .connection import find_cons_by_id, run_command_on
+from .connection import (
+    find_con_by_id,
+    find_cons_by_id,
+    find_cons_by_id_if_exists,
+    run_command_on,
+)
 from .layout_files import ApplicationLaunchConfig, ContainerConfig, WorkspaceLayout
-from .utils import get_con_description
+from .utils import get_con_description, is_window
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +33,92 @@ Because the parent container size might not always be exactly divisible by the
 ratio of the children, we allow a small tolerance so that the layout can still be
 applied.
 """
+
+
+def dissolve_layout(connection: Connection, workspace_con: Con) -> None:
+    """Dissolves the layout of the given workspace.
+
+    After this function, all windows are direct children of the workspace.
+
+    Parameters:
+        connection: A connection to sway.
+        workspace_con: The workspace container to dissolve the layout for.
+    """
+
+    def dissolve_child_layout(child_con: Con):
+        if not child_con.nodes:
+            return
+
+        assert not is_window(child_con)
+
+        for grandchild in child_con.nodes:
+            dissolve_child_layout(grandchild)
+
+        initial_child_con = find_con_by_id(connection, child_con.id)
+
+        logger.debug(f"Dissolving layout of {get_con_description(initial_child_con)}")
+
+        # Set the layout to horizontal to ensure that moving the children works
+        # correctly.
+        run_command_on(initial_child_con, "layout splith")
+
+        for grandchild in initial_child_con.nodes:
+            while True:
+                (updated_grandchild_con, updated_child_con) = find_cons_by_id_if_exists(
+                    connection, grandchild.id, child_con.id
+                )
+                if updated_grandchild_con is None:
+                    raise RuntimeError(
+                        f"Container {get_con_description(grandchild)} has disappeared"
+                    )
+                if updated_child_con is None:
+                    logger.debug(
+                        f"Layout {get_con_description(child_con)} was dissolved"
+                    )
+                    break
+                elif updated_grandchild_con.id in {
+                    con.id for con in updated_child_con.nodes
+                }:
+                    if len(updated_child_con.nodes) == 1:
+                        # If the layout has only one child, there is a sway command
+                        # to remove the layout.
+                        run_command_on(grandchild, "split none")
+                    else:
+                        # If there are multiple children, we have to move the
+                        # grandchild out of the child layout.
+                        logger.debug(
+                            f"Moving {get_con_description(updated_grandchild_con)} to move it "
+                            + f"out of {get_con_description(updated_child_con)}"
+                        )
+                        run_command_on(updated_grandchild_con, "move left")
+                else:
+                    logger.debug(
+                        f"Finished moving {get_con_description(updated_grandchild_con)} "
+                        + f"out of {get_con_description(child_con)}"
+                    )
+                    break
+
+        logger.debug(
+            f"Dissolved layout of {get_con_description(child_con)} successfully"
+        )
+
+    logger.debug(
+        f"Dissolving layout for workspace {get_con_description(workspace_con)}"
+    )
+    for child in workspace_con.nodes:
+        dissolve_child_layout(child)
+
+    # Sanity check
+    for child in workspace_con.nodes:
+        if child.nodes:
+            logger.warning(
+                f"There are still {len(child.nodes)} child nodes left on "
+                + f"{get_con_description(child)} after dissolving the layout "
+                + "on workspace {get_con_description"
+            )
+    logger.info(
+        f"Dissolved layout for workspace {get_con_description(workspace_con)} successfully"
+    )
 
 
 def create_layout(
@@ -238,7 +329,7 @@ def find_leftover_windows(
                 del leftover_windows[con_layout._con_id]
             else:
                 logger.warning(
-                    f"Application {con_layout.name} with con_id {con_layout._con_id} not found while "
+                    f"Application {con_layout.cmd} with con_id {con_layout._con_id} not found while "
                     + "looking for leftover windows."
                 )
         else:
