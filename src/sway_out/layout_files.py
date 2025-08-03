@@ -1,5 +1,6 @@
 """Data structures and utilities for layout descriptions."""
 
+import re
 from typing import Annotated, Literal, Self, TextIO
 
 import yaml
@@ -124,6 +125,18 @@ class WaylandWindowMatchExpression(BaseModel):
     app_id: str | None = None
     title: str | None = None
 
+    @field_validator("app_id", "title", mode="after")
+    @staticmethod
+    def validate_regex(value: str | None) -> str | None:
+        if value is None:
+            return value
+        try:
+            _ = re.compile(value)
+        except re.PatternError as e:
+            raise ValueError(f"The regex '{value}' is invalid: {e}")
+        else:
+            return value
+
     @model_validator(mode="after")
     def validate_match(self) -> Self:
         if self.app_id is None and self.title is None:
@@ -135,6 +148,18 @@ class X11WindowMatchExpression(BaseModel):
     class_: Annotated[str | None, Field(alias="class", title="Window class")] = None
     instance: Annotated[str | None, Field(title="Window instance")] = None
     title: str | None = None
+
+    @field_validator("class_", "instance", "title", mode="after")
+    @staticmethod
+    def validate_regex(value: str | None) -> str | None:
+        if value is None:
+            return value
+        try:
+            _ = re.compile(value)
+        except re.PatternError as e:
+            raise ValueError(f"The regex '{value}' is invalid: {e}")
+        else:
+            return value
 
     @model_validator(mode="after")
     def validate_match(self) -> Self:
