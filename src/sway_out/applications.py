@@ -13,6 +13,7 @@ from .layout_files import (
     WorkspaceLayout,
 )
 from .matching import find_current_workspace, find_windows_on_workspace
+from .utils import get_con_description
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,49 @@ LAUNCH_CHECK_INTERVAL_SECONDS = 0.5
 See also:
   - [wait_for_window][sway_out.applications.wait_for_window]
 """
+
+
+def match_existing_windows(workspace: Con, layout: WorkspaceLayout) -> None:
+    """Match existing windows in the workspace with the launch configurations.
+
+    This function updates the con_id of the launch configurations in the layout
+    to match existing windows on the current workspace.
+
+    Parameters:
+        workspace: The workspace to search for existing windows.
+        layout: The layout containing the applications to match.
+
+    Note:
+        This function modifies its argument.
+    """
+
+    def match_element(
+        element_layout: ApplicationLaunchConfig | ContainerConfig,
+    ) -> None:
+        if isinstance(element_layout, ApplicationLaunchConfig):
+            matching_windows = [
+                con
+                for con in find_windows_on_workspace(element_layout.match, workspace)
+                if con.id not in matched_con_ids
+            ]
+            if matching_windows:
+                con = matching_windows[0]
+                element_layout._con_id = con.id
+                matched_con_ids.add(con.id)
+                logger.info(f"Matched existing window {get_con_description(con)}")
+            else:
+                logger.debug(f"No matching window found for {element_layout.cmd}")
+        else:
+            assert isinstance(element_layout, ContainerConfig)
+            for child in element_layout.children:
+                match_element(child)
+
+    matched_con_ids: set[int] = set()
+
+    for child in layout.children:
+        match_element(child)
+
+    logger.debug(f"Matched {len(matched_con_ids)} existing windows in the layout")
 
 
 def launch_applications_from_layout(connection: Connection, layout: WorkspaceLayout):
@@ -50,7 +94,12 @@ def launch_applications_from_layout(connection: Connection, layout: WorkspaceLay
 
     def go(container: ApplicationLaunchConfig | ContainerConfig) -> None:
         if isinstance(container, ApplicationLaunchConfig):
-            launch_application(connection, container)
+            if hasattr(container, "_con_id"):
+                logger.debug(
+                    f"Skipping launch of {container.cmd} because it matched an existing window"
+                )
+            else:
+                launch_application(connection, container)
         else:
             assert isinstance(container, ContainerConfig)
             for child in container.children:
