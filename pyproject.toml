@@ -1,6 +1,6 @@
 [project]
 name = "sway-out"
-version = "0.1.0rc0"
+version = "0.1.0rc1"
 description = "A layout save/apply utility for the Sway window manager."
 authors = []
 requires-python = ">=3.12,<4"
@@ -72,7 +72,8 @@ version_scheme = "pep440"
 version_provider = "uv"
 update_changelog_on_bump = true
 major_version_zero = true
-changelog_start_rev = "v0.1.0"
+changelog_start_rev = "v0.1.0rc0"
 changelog_incremental = false
+changelog_merge_prerelease = true
 allowed_prefixes = ["fixup!", "squash!"]
 use_shortcuts = true
