@@ -9,9 +9,13 @@ import yaml
 from i3ipc import Connection
 
 from .applications import launch_applications_from_layout
-from .connection import run_command
+from .connection import find_con_by_id, run_command, run_command_on
 from .layout import check_layout, create_layout, find_leftover_windows, resize_layout
-from .layout_files import load_layout_configuration, map_workspaces
+from .layout_files import (
+    find_focused_element_in_layout,
+    load_layout_configuration,
+    map_workspaces,
+)
 from .marks import apply_marks
 from .matching import find_current_workspace
 from .notifications import error_notification, progress_notification
@@ -95,6 +99,17 @@ def main_apply(ctx: click.Context, layout_file):
                 if ctx.obj.notifications:
                     error_notification("Applying layout", error_message)
                 notification.successful = False
+
+        focused_layout = find_focused_element_in_layout(configuration)
+        if focused_layout is not None:
+            focused_con = find_con_by_id(connection, focused_layout._con_id)
+            run_command_on(focused_con, "focus")
+            logger.info(
+                f"Focused element in layout: {get_con_description(focused_con)}",
+            )
+        else:
+            logger.debug("No focused element found in layout")
+
         logger.info(f"Applied layout for {len(workspace_layout_mapping)} workspace(s)")
 
 

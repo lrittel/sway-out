@@ -106,6 +106,20 @@ class LayoutChildMixin:
     percent: Annotated[int | None, Field(default=None, ge=0, le=100)]
 
 
+class FocusMixin:
+    """A mixin to add focus-related fields to a model."""
+
+    focus: Annotated[
+        bool,
+        Field(
+            default=False,
+            title="Focus after launch",
+            description="If set, the container will be focused after it is launched. "
+            + "Only one container is allowed to have set this to true.",
+        ),
+    ]
+
+
 class WaylandWindowMatchExpression(BaseModel):
     app_id: str | None = None
     title: str | None = None
@@ -140,7 +154,9 @@ class WindowMatchExpression(BaseModel):
         return self
 
 
-class ApplicationLaunchConfig(BaseModel, MarksMixin, ConIdMixin, LayoutChildMixin):
+class ApplicationLaunchConfig(
+    BaseModel, MarksMixin, ConIdMixin, LayoutChildMixin, FocusMixin
+):
     cmd: Annotated[
         list[str] | str,
         Field(title="Launch command", description="Command to launch the application."),
@@ -155,7 +171,7 @@ class ApplicationLaunchConfig(BaseModel, MarksMixin, ConIdMixin, LayoutChildMixi
 
 
 class ContainerConfig(
-    BaseModel, MarksMixin, ConIdMixin, LayoutParentMixin, LayoutChildMixin
+    BaseModel, MarksMixin, ConIdMixin, LayoutParentMixin, LayoutChildMixin, FocusMixin
 ):
     pass
 
@@ -192,6 +208,40 @@ class Layout(BaseModel):
             raise ValueError(
                 "Either `focused_workspace` or `workspaces` has to be present."
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_focus(self) -> Self:
+        def count_focused_elements(
+            layout: WorkspaceLayout | ContainerConfig | ApplicationLaunchConfig,
+        ) -> int:
+            count = 0
+
+            if isinstance(layout, (WorkspaceLayout, ContainerConfig)):
+                count += sum(count_focused_elements(child) for child in layout.children)
+
+            if (
+                isinstance(layout, (ContainerConfig, ApplicationLaunchConfig))
+                and layout.focus
+            ):
+                count += 1
+
+            return count
+
+        total_count = 0
+
+        if self.focused_workspace is not None:
+            total_count += count_focused_elements(self.focused_workspace)
+
+        if self.workspaces is not None:
+            for workspace_layout in self.workspaces.values():
+                total_count += count_focused_elements(workspace_layout)
+
+        if total_count > 1:
+            raise ValueError(
+                "Only one container can have `focus` set to `True` in the entire layout."
+            )
+
         return self
 
 
@@ -253,3 +303,46 @@ def map_workspaces(
 
     tree = connection.get_tree()
     return dict(go())
+
+
+def find_focused_element_in_layout(
+    layout: Layout,
+) -> ApplicationLaunchConfig | ContainerConfig | None:
+    """Find element to focus in a layout.
+
+    Arguments:
+        layout: The layout to search in.
+
+    Returns:
+        The focused element or `None` if no element is focused.
+    """
+
+    if layout.focused_workspace is not None:
+        return find_focused_element_on_workspace(layout.focused_workspace)
+    if layout.workspaces is not None:
+        for workspace_layout in layout.workspaces.values():
+            focused_element = find_focused_element_on_workspace(workspace_layout)
+            if focused_element is not None:
+                return focused_element
+
+
+def find_focused_element_on_workspace(
+    layout: WorkspaceLayout | ContainerConfig | ApplicationLaunchConfig,
+) -> ApplicationLaunchConfig | ContainerConfig | None:
+    """Find the element to focus in a layout.
+
+    Arguments:
+        layout: The layout to search in.
+
+    Returns:
+        The focused element or `None` if no element is focused.
+    """
+
+    if isinstance(layout, (ContainerConfig, ApplicationLaunchConfig)) and layout.focus:
+        return layout
+    if isinstance(layout, (WorkspaceLayout, ContainerConfig)):
+        for child in layout.children:
+            focused_child = find_focused_element_on_workspace(child)
+            if focused_child is not None:
+                return focused_child
+    return None
