@@ -1,3 +1,13 @@
+## v0.1.0rc2 (2025-08-17)
+
+### Feat
+
+- add the save command to create layout files
+
+### Fix
+
+- fix an error about percentages on empty workspaces
+
 ## v0.1.0rc1 (2025-08-03)
 
 ### BREAKING CHANGE

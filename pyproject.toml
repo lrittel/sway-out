@@ -1,6 +1,6 @@
 [project]
 name = "sway-out"
-version = "0.1.0rc1"
+version = "0.1.0rc2"
 description = "A layout save/apply utility for the Sway window manager."
 authors = []
 requires-python = ">=3.12,<4"
