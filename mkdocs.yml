@@ -32,6 +32,7 @@ nav:
     - sway_out.applications: reference/sway_out.applications.md
     - sway_out.connection: reference/sway_out.connection.md
     - sway_out.layout: reference/sway_out.layout.md
+    - sway_out.layout_creation: reference/sway_out.layout_creation.md
     - sway_out.layout_files: reference/sway_out.layout_files.md
     - sway_out.main: reference/sway_out.main.md
     - sway_out.marks: reference/sway_out.marks.md
