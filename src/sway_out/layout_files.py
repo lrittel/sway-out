@@ -82,7 +82,10 @@ class LayoutParentMixin:
     def validate_percent(self) -> Self:
         if self.layout in ["splith", "splitv"]:
             percent_sum = sum(child.percent or 0 for child in self.children)
-            any_none = any(child.percent is None for child in self.children)
+            any_none = (
+                any(child.percent is None for child in self.children)
+                or not self.children
+            )
             if not any_none and percent_sum != 100:
                 raise ValueError(
                     "If a percentage is set on all children of a"
