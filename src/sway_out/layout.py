@@ -360,7 +360,7 @@ def resize_layout(
     def resize_children(con_layout: WorkspaceLayout | ContainerConfig):
         con = _find_con(tree, con_layout)
 
-        con_width_px, con_height_px = _get_container_size_excluding_gaps(con)
+        con_width_px, con_height_px = get_container_size_excluding_gaps(con)
 
         if con_layout.layout in ["splith", "splitv"]:
             layout = con_layout.layout
@@ -511,7 +511,7 @@ def check_layout(
 
         if isinstance(container_layout, ContainerConfig):
             # Get the container dimensions
-            con_width_px, con_height_px = _get_container_size_excluding_gaps(con)
+            con_width_px, con_height_px = get_container_size_excluding_gaps(con)
             if con.layout in ["splith", "splitv"]:
                 con_layout = con.layout
             else:
@@ -541,7 +541,7 @@ def check_layout(
         layout = workspace_con.layout
     else:
         layout = "other"
-    width_px, height_px = _get_container_size_excluding_gaps(workspace_con)
+    width_px, height_px = get_container_size_excluding_gaps(workspace_con)
 
     # Always check all containers in the workspace to show an exhaustive error message.
     result = True
@@ -549,6 +549,27 @@ def check_layout(
         if not check_container_layout(child, width_px, height_px, layout):
             result = False
     return result
+
+
+def get_container_size_excluding_gaps(con: Con) -> tuple[int, int]:
+    # For windows, we use the rect and deco rect.
+    # rect does not include the decoration, i.e. title bar.
+    # For containers, we sum up the children where necessary to exclude
+    # gaps between windows in the result.
+    # We assume that the decoration is always at the top.
+
+    if con.layout == "splith":
+        width = sum(get_container_size_excluding_gaps(child)[0] for child in con.nodes)
+    else:
+        assert con.rect.width == con.deco_rect.width or con.deco_rect.width == 0
+        width = con.rect.width
+
+    if con.layout == "splitv":
+        height = sum(get_container_size_excluding_gaps(child)[1] for child in con.nodes)
+    else:
+        height = con.rect.height + con.deco_rect.height
+
+    return width, height
 
 
 def _find_con(
@@ -564,26 +585,3 @@ def _find_con(
         raise RuntimeError(f"Container for application with con ID {con_id} not found")
     else:
         return result
-
-
-def _get_container_size_excluding_gaps(con: Con) -> tuple[int, int]:
-    # For windows, we use the rect and deco rect.
-    # rect does not include the decoration, i.e. title bar.
-    # For containers, we sum up the children where necessary to exclude
-    # gaps between windows in the result.
-    # We assume that the decoration is always at the top.
-
-    if con.layout == "splith":
-        width = sum(_get_container_size_excluding_gaps(child)[0] for child in con.nodes)
-    else:
-        assert con.rect.width == con.deco_rect.width or con.deco_rect.width == 0
-        width = con.rect.width
-
-    if con.layout == "splitv":
-        height = sum(
-            _get_container_size_excluding_gaps(child)[1] for child in con.nodes
-        )
-    else:
-        height = con.rect.height + con.deco_rect.height
-
-    return width, height

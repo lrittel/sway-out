@@ -50,7 +50,9 @@ class MarksMixin:
     @field_validator("mark", "marks", mode="after")
     @staticmethod
     def validate_mark_values(v: str | list[str] | None) -> str | list[str] | None:
-        marks = v if isinstance(v, list) else [v or ""]
+        if v is None:
+            return v
+        marks = v if isinstance(v, list) else [v]
         for mark in marks:
             if len(mark) != 1:
                 raise ValueError(f"Mark must be a single character, got: {mark!r}")
@@ -81,7 +83,12 @@ class LayoutParentMixin:
     @model_validator(mode="after")
     def validate_percent(self) -> Self:
         if self.layout in ["splith", "splitv"]:
-            percent_sum = sum(child.percent or 0 for child in self.children)
+            child_percentages = [
+                child.percent or 0
+                for child in self.children
+                if child.percent is not None
+            ]
+            percent_sum = sum(child_percentages)
             any_none = (
                 any(child.percent is None for child in self.children)
                 or not self.children
@@ -89,7 +96,8 @@ class LayoutParentMixin:
             if not any_none and percent_sum != 100:
                 raise ValueError(
                     "If a percentage is set on all children of a"
-                    + " layout, the percentages have add up to 100"
+                    + " layout, the percentages have add up to 100: "
+                    + f"{' + '.join(str(p) for p in child_percentages)} = {percent_sum} != 100"
                 )
         elif self.layout in ["stacking", "tabbed"]:
             any_percent = any(child.percent is not None for child in self.children)
@@ -291,6 +299,18 @@ def load_layout_configuration(file: TextIO) -> Layout:
 
     obj = yaml.load(file, yaml.SafeLoader)
     return Layout.model_validate(obj)
+
+
+def save_layout_configuration(layout: Layout, file: TextIO):
+    """Save a layout configuration to a file-like object.
+
+    Arguments:
+        layout: The layout to save.
+        file: The destination file.
+    """
+
+    obj = layout.model_dump(exclude_none=True, exclude_unset=True)
+    yaml.dump(obj, file, yaml.SafeDumper, encoding="utf-8", allow_unicode=True)
 
 
 def map_workspaces(
