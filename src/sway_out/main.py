@@ -8,6 +8,8 @@ import pydantic
 import yaml
 from i3ipc import Connection
 
+from sway_out.layout_creation import create_layout_from_workspace
+
 from .applications import launch_applications_from_layout, match_existing_windows
 from .connection import find_con_by_id, run_command, run_command_on
 from .layout import (
@@ -21,6 +23,7 @@ from .layout_files import (
     find_focused_element_in_layout,
     load_layout_configuration,
     map_workspaces,
+    save_layout_configuration,
 )
 from .marks import apply_marks
 from .matching import find_current_workspace
@@ -54,7 +57,7 @@ def main(ctx: click.Context, notifications: bool):
 
 
 @main.command("apply")
-@click.argument("layout_file", type=click.File("rb"))
+@click.argument("layout_file", type=click.File("r"))
 @click.pass_context
 def main_apply(ctx: click.Context, layout_file):
     connection: Connection = ctx.obj.connection
@@ -121,6 +124,31 @@ def main_apply(ctx: click.Context, layout_file):
             logger.debug("No focused element found in layout")
 
         logger.info(f"Applied layout for {len(workspace_layout_mapping)} workspace(s)")
+
+
+@main.command("save")
+@click.argument("layout_file", type=click.File("w"), required=False)
+@click.option(
+    "-w",
+    "--workspace",
+    type=str,
+    required=False,
+    multiple=True,
+    help="Restrict to specific workspaces",
+)
+@click.pass_context
+def main_save(ctx: click.Context, layout_file, workspace):
+    connection: Connection = ctx.obj.connection
+    assert connection is not None
+    workspace_names = set(workspace) if workspace else None
+
+    with progress_notification("Creating layout", "Creation") as notification:
+        if ctx.obj.notifications:
+            notification.start()
+        layout = create_layout_from_workspace(connection, list(workspace) or None)
+        save_layout_configuration(layout, layout_file)
+
+    logger.info("Layout creation completed.")
 
 
 if __name__ == "__main__":
