@@ -163,7 +163,7 @@ def create_layout(
             )
 
         # Make sure that the con is a direct child of the workspace to make layouting less error-prone.
-        while find_parent_con(child_id).id != workspace_id:
+        while find_parent_con(con_id).id != workspace_id:
             # Move the container to the right to not disturb the finished part of the layout.
             run_command_on(con, f"move right")
             # Make shure that the container is still on the workspace.
