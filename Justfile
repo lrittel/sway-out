@@ -37,19 +37,24 @@ commit *args:
     uv run cz commit {{ args }}
 
 # Run the pre-commit utility.
-[group('git')]
+[group('checks')]
 pre-commit *args:
     uv run pre-commit {{ args }}
 
 # Run the pre-commit hook manually.
-[group('git')]
+[group('checks')]
 run-pre-commit:
     uv run pre-commit run
 
 # Run the pre-commit hook manually on all files.
-[group('git')]
+[group('checks')]
 run-pre-commit-all:
     uv run pre-commit run --all
+
+# Get basedpyright diagnostics for all files.
+[group('checks')]
+run-lsp:
+    uv run basedpyright .
 
 # List all available workflows.
 [group('ci')]
