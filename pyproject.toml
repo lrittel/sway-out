@@ -77,3 +77,9 @@ changelog_incremental = false
 changelog_merge_prerelease = true
 allowed_prefixes = ["fixup!", "squash!"]
 use_shortcuts = true
+
+[tool.basedpyright]
+pythonVersion = "3.12"
+stubPath = "src/sway_out/stubs"
+# reportMissingTypeStubs = false
+# reportPrivateUsage = false
