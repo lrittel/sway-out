@@ -9,6 +9,7 @@ import yaml
 from i3ipc import Connection
 
 from sway_out.layout_creation import create_layout_from_workspace
+from sway_out.outputs import move_workspace_to_output
 
 from .applications import launch_applications_from_layout, match_existing_windows
 from .connection import find_con_by_id, run_command, run_command_on
@@ -106,6 +107,7 @@ def main_apply(ctx: click.Context, layout_file):
                     error_notification("Applying layout", error_message)
                 notification.successful = False
             apply_marks(connection, workspace_layout)
+            move_workspace_to_output(connection, workspace_layout)
             if not leftover_windows and not check_layout(connection, workspace_layout):
                 error_message = f"Failed to apply layout to {workspace_name}"
                 click.echo(error_message, err=True)

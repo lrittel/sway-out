@@ -213,7 +213,15 @@ class ContainerConfig(
 
 
 class WorkspaceLayout(BaseModel, ConIdMixin, LayoutParentMixin):
-    pass
+    output: Annotated[
+        str | list[str] | None,
+        Field(
+            title="Output to place the workspace on",
+            description="The workspace will be put on this workspace "
+            + "if it exists. If multiple outputs are specified, they "
+            + "are tried in order.",
+        ),
+    ] = None
 
 
 class Layout(BaseModel):
