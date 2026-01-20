@@ -3,7 +3,7 @@ name = "sway-out"
 version = "0.1.0rc2"
 description = "A layout save/apply utility for the Sway window manager."
 authors = []
-requires-python = ">=3.12,<4"
+requires-python = ">=3.12,<3.15"
 readme = "README.md"
 dependencies = [
     "click (>=8.2.1,<9.0.0)",
