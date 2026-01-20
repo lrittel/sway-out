@@ -18,8 +18,9 @@ jobs:
         with:
           enable-cache: true
 
+      # Has to be kept in sync with the pre-commit configuration.
       - name: Set up Python
-        run: uv python install
+        run: uv python install 3.13
 
       - name: set PY
         run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
