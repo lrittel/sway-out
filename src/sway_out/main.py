@@ -1,7 +1,9 @@
 """Main entrypoint."""
 
 import logging
+import sys
 from dataclasses import dataclass
+from typing import TextIO
 
 import click
 import pydantic
@@ -140,9 +142,12 @@ def main_apply(ctx: click.Context, layout_file):
     help="Restrict to specific workspaces",
 )
 @click.pass_context
-def main_save(ctx: click.Context, layout_file, workspace):
+def main_save(ctx: click.Context, layout_file: TextIO | None, workspace):
     connection: Connection = ctx.obj.connection
     assert connection is not None
+
+    if layout_file is None:
+        layout_file = sys.stdout
 
     with progress_notification("Creating layout", "Creation") as notification:
         if ctx.obj.notifications:
