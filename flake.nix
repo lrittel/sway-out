@@ -74,10 +74,27 @@
           );
     in
     {
-      packages.${system}.default = mkApplication {
-        venv = pythonSet.mkVirtualEnv "sway-out-env" workspace.deps.default;
-        package = pythonSet.sway-out;
-      };
+      packages.${system}.default =
+        let
+          app = mkApplication {
+            venv = pythonSet.mkVirtualEnv "sway-out-env" workspace.deps.default;
+            package = pythonSet.sway-out;
+          };
+        in
+        # mkApplication does not seem to support passing makeWrapper args.
+        # Work around this by creating a thin wrapper derivation.
+        pkgs.symlinkJoin {
+          name = "sway-out";
+
+          paths = [ app ];
+
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+
+          postBuild = ''
+            wrapProgram $out/bin/sway-out \
+              --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.libnotify ]}
+          '';
+        };
 
       apps.${system}.default = {
         type = "app";
