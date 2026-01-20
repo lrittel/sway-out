@@ -113,9 +113,9 @@ class LayoutParentMixin:
                     "Percentages are not allowed in stacking or tabbed layouts"
                 )
         else:
-            assert False, (
-                "Unknown layout type, this should have been caught by the validation."
-            )
+            assert (
+                False
+            ), "Unknown layout type, this should have been caught by the validation."
         return self
 
 
