@@ -67,7 +67,6 @@ src_paths = ["src", "tests"]
 skip_gitignore = true
 
 [tool.commitizen]
-name = "cz_extended_conventional"
 tag_format = "v$major.$minor.$patch$prerelease"
 version_scheme = "pep440"
 version_provider = "uv"
