@@ -1,6 +1,7 @@
 """Utilities related to the Sway connection."""
 
 import logging
+from typing import cast
 
 from i3ipc import CommandReply, Con, Connection
 
@@ -123,7 +124,7 @@ def find_cons_by_id(connection: Connection, *con_ids: int) -> tuple[Con, ...]:
             f"Container(s) with con_ids {', '.join(str(i) for i in missing_ids)} not found in tree"
         )
     assert None not in result
-    return result
+    return cast(tuple[Con, ...], result)
 
 
 def find_cons_by_id_if_exists(

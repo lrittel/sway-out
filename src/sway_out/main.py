@@ -83,8 +83,8 @@ def main_apply(ctx: click.Context, layout_file):
             notification.update(index + 1, len(workspace_layout_mapping))
             run_command(connection, f"workspace {workspace_name}")
             workspace_con = find_current_workspace(connection)
-            workspace_layout._con_id = workspace_con.id
             assert workspace_con is not None, "No current workspace found?"
+            workspace_layout._con_id = workspace_con.id
             logging.debug("Matching existing windows on workspace: %s", workspace_name)
             match_existing_windows(workspace_con, workspace_layout)
             logging.debug("Dissolving layout for workspace: %s", workspace_name)
@@ -117,6 +117,7 @@ def main_apply(ctx: click.Context, layout_file):
 
         focused_layout = find_focused_element_in_layout(configuration)
         if focused_layout is not None:
+            assert focused_layout._con_id is not None
             focused_con = find_con_by_id(connection, focused_layout._con_id)
             run_command_on(focused_con, "focus")
             logger.info(

@@ -2,7 +2,7 @@
 
 import itertools
 import logging
-from typing import Literal
+from typing import Literal, cast
 
 from i3ipc import Con, Connection
 
@@ -150,7 +150,8 @@ def create_layout(
 
     def move_con_to_workspace(con_id: int):
         (con,) = find_cons_by_id(connection, con_id)
-        if con.workspace().id != workspace_id:
+        con_workspace = con.workspace()
+        if con_workspace is None or con_workspace.id != workspace_id:
             logger.debug(
                 f"Moving container {get_con_description(con)} to workspace {get_con_description(workspace_con)}"
             )
@@ -168,9 +169,10 @@ def create_layout(
             run_command_on(con, f"move right")
             # Make shure that the container is still on the workspace.
             (con,) = find_cons_by_id(connection, con_id)
-            assert con.workspace().id == workspace_id, (
+            con_workspace = con.workspace()
+            assert con_workspace is not None and con_workspace.id == workspace_id, (
                 f"Accidentally moved {get_con_description(con)} to another workspace "
-                + f"({get_con_description(con.workspace())} "
+                + f"({get_con_description(con_workspace) if con_workspace else 'unknown'} "
                 + f"instead of {get_con_description(workspace_con)})"
             )
 
@@ -339,10 +341,12 @@ def find_leftover_windows(
     tree = connection.get_tree()
     workspace_id = workspace_layout._con_id
     leftover_windows = {
-        con.id: con for con in tree.leaves() if con.workspace().id == workspace_id
+        con.id: con
+        for con in tree.leaves()
+        if (ws := con.workspace()) is not None and ws.id == workspace_id
     }
     remove_matched_windows(workspace_layout)
-    return leftover_windows.values()
+    return list(leftover_windows.values())
 
 
 def resize_layout(
@@ -393,7 +397,7 @@ def resize_layout(
         con_layout: ApplicationLaunchConfig | ContainerConfig,
         parent_width_px: int,
         parent_height_px: int,
-        parent_layout: Literal["splith", "splitv", "other"],
+        parent_layout: Literal["splith", "splitv", "stacking", "tabbed", "other"],
     ) -> bool:
         con = _find_con(tree, con_layout)
 
@@ -460,13 +464,9 @@ def check_layout(
         container_layout: ApplicationLaunchConfig | ContainerConfig,
         parent_width_px: int,
         parent_height_px: int,
-        parent_layout: Literal["splith", "splitv", "other"],
+        parent_layout: Literal["splith", "splitv", "stacking", "tabbed", "other"],
     ) -> bool:
-        assert (
-            container_layout._con_id is not None
-        ), "The con_id of the container layout should have been set before calling this function."
-
-        con = tree.find_by_id(container_layout._con_id)
+        con = _find_con(tree, container_layout)
 
         result = True
 
@@ -512,8 +512,12 @@ def check_layout(
         if isinstance(container_layout, ContainerConfig):
             # Get the container dimensions
             con_width_px, con_height_px = get_container_size_excluding_gaps(con)
+            con_layout: Literal["splith", "splitv", "stacking", "tabbed", "other"]
             if con.layout in ["splith", "splitv"]:
-                con_layout = con.layout
+                con_layout = cast(
+                    Literal["splith", "splitv", "stacking", "tabbed", "other"],
+                    con.layout,
+                )
             else:
                 con_layout = "other"
 
@@ -537,8 +541,12 @@ def check_layout(
         )
         return False
 
+    layout: Literal["splith", "splitv", "stacking", "tabbed", "other"]
     if workspace_con.layout in ["splith", "splitv"]:
-        layout = workspace_con.layout
+        layout = cast(
+            Literal["splith", "splitv", "stacking", "tabbed", "other"],
+            workspace_con.layout,
+        )
     else:
         layout = "other"
     width_px, height_px = get_container_size_excluding_gaps(workspace_con)
@@ -581,7 +589,7 @@ def _find_con(
         + "This is required for the layout creation."
     )
     result = tree.find_by_id(con_id)
-    if result is None:
-        raise RuntimeError(f"Container for application with con ID {con_id} not found")
-    else:
-        return result
+    assert (
+        result is not None
+    ), f"Container for application with con ID {con_id} not found"
+    return result

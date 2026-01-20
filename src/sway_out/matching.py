@@ -60,8 +60,15 @@ def is_window_matching(con: Con, match_expression: WindowMatchExpression) -> boo
             wayland.app_id is not None or wayland.title is not None
         ), "At least one Wayland match expression must be provided, this should be enforced by the model."
         return (
-            wayland.app_id is None or re.match(wayland.app_id, con.app_id) is not None
-        ) and (wayland.title is None or re.match(wayland.title, con.name) is not None)
+            wayland.app_id is None
+            or (
+                con.app_id is not None
+                and re.match(wayland.app_id, con.app_id) is not None
+            )
+        ) and (
+            wayland.title is None
+            or (con.name is not None and re.match(wayland.title, con.name) is not None)
+        )
     elif con.window_class is not None or con.window_instance is not None:
         # The window runs under XWayland
         logger.debug(
@@ -74,13 +81,26 @@ def is_window_matching(con: Con, match_expression: WindowMatchExpression) -> boo
             x11.class_ is not None or x11.instance is not None or x11.title is not None
         ), "At least one X11 match expression must be provided, this should be enforced by the model."
         return (
-            (x11.title is None or re.match(x11.title, con.window_title) is not None)
+            (
+                x11.title is None
+                or (
+                    con.window_title is not None
+                    and re.match(x11.title, con.window_title) is not None
+                )
+            )
             and (
-                x11.class_ is None or re.match(x11.class_, con.window_class) is not None
+                x11.class_ is None
+                or (
+                    con.window_class is not None
+                    and re.match(x11.class_, con.window_class) is not None
+                )
             )
             and (
                 x11.instance is None
-                or re.match(x11.instance, con.window_instance) is not None
+                or (
+                    con.window_instance is not None
+                    and re.match(x11.instance, con.window_instance) is not None
+                )
             )
         )
     else:

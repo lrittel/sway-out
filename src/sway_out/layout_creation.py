@@ -1,6 +1,7 @@
 """Creation of new layout from existing workspace states."""
 
 import logging
+from typing import cast
 
 from i3ipc import Con, Connection
 
@@ -64,10 +65,7 @@ def create_layout_from_workspace(
                         create_layout_for_container(child, con) for child in con.nodes
                     ]
                     _fix_up_percentages(children)
-                    result = ContainerConfig(
-                        children=children,
-                        layout=con.layout,
-                    )
+                    result = ContainerConfig(children, con.layout)
 
                 if len(con.marks) == 1:
                     result.mark = con.marks[0]
@@ -93,6 +91,8 @@ def create_layout_from_workspace(
     tree = connection.get_tree()
     workspaces: dict[str, WorkspaceLayout] = {}
     for workspace in tree.workspaces():
+        if workspace.name is None:
+            continue
         if workspace_names is not None and workspace.name not in workspace_names:
             continue
 
@@ -164,8 +164,10 @@ def _calculate_percent(con: Con, parent: Con) -> int | None:
 
     if con.rect.width == 0 or con.rect.height == 0:
         return None
-    return (con.rect.width * con.rect.height) / (
-        con.workspace().rect.width * con.workspace().rect.height
+    workspace = con.workspace()
+    assert workspace is not None
+    return (con.rect.width * con.rect.height) // (
+        workspace.rect.width * workspace.rect.height
     )
 
 
@@ -187,14 +189,14 @@ def _fix_up_percentages(
     if not children_layouts or any(child.percent is None for child in children_layouts):
         return
 
-    total = sum(child.percent for child in children_layouts)
+    total = sum(cast(int, child.percent) for child in children_layouts)
     difference = 100 - total
     if difference != 0:
         # Lazily adjust the last child to fix the percentage.
         last_child = children_layouts[-1]
         assert last_child.percent is not None, "This should have been checked before"
-        children_layouts[-1].percent += difference
+        last_child.percent = cast(int, last_child.percent) + difference
 
     assert (
-        sum(child.percent for child in children_layouts) == 100
+        sum(cast(int, child.percent) for child in children_layouts) == 100
     ), "Percentages do not sum up to 100% after fix-up"
