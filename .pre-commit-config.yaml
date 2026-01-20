@@ -3,7 +3,7 @@ default_install_hook_types:
   - commit-msg
 
 default_language_version:
-  python: python3.13
+  python: python3.14
 
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
@@ -24,7 +24,7 @@ repos:
       # whitespace
       - id: end-of-file-fixer
       - id: mixed-line-ending
-        args: [ "--fix=no" ]
+        args: ["--fix=no"]
       - id: trailing-whitespace
 
       # scripts
@@ -34,7 +34,7 @@ repos:
       # Python specifics
       - id: debug-statements
       - id: name-tests-test
-        args: [ "--pytest-test-first" ]
+        args: ["--pytest-test-first"]
         exclude: '^tests/(root_modules/|utils\.py)'
 
       # Data formats
@@ -75,5 +75,4 @@ repos:
         entry: uv run cz check --commit-msg-file
         language: system
         stages: [commit-msg]
-
 # vim: ts=2:sw=2:et
