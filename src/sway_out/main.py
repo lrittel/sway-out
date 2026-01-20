@@ -143,7 +143,6 @@ def main_apply(ctx: click.Context, layout_file):
 def main_save(ctx: click.Context, layout_file, workspace):
     connection: Connection = ctx.obj.connection
     assert connection is not None
-    workspace_names = set(workspace) if workspace else None
 
     with progress_notification("Creating layout", "Creation") as notification:
         if ctx.obj.notifications:

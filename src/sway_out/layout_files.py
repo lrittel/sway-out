@@ -17,7 +17,7 @@ from pydantic import (
 from .connection import get_focused_workspace
 
 
-class MarksMixin:  # type: ignore[reportUninitializedInstanceVariable]
+class MarksMixin:
     """Mixin to add marks to a model.
 
     The fields related to marks are extracted to avoid duplication between
@@ -72,7 +72,7 @@ class MarksMixin:  # type: ignore[reportUninitializedInstanceVariable]
         return self
 
 
-class ConIdMixin:  # type: ignore[reportUninitializedInstanceVariable]
+class ConIdMixin:
     """Mixin to add con_id to a model.
 
     The con_id is used to identify the container in Sway.
@@ -81,7 +81,7 @@ class ConIdMixin:  # type: ignore[reportUninitializedInstanceVariable]
     _con_id: Annotated[int | None, PrivateAttr(default=None)]
 
 
-class LayoutParentMixin:  # type: ignore[reportUninitializedInstanceVariable]
+class LayoutParentMixin:
     """A mixin to add layout-parent-related fields to a model."""
 
     children: "list[ApplicationLaunchConfig | ContainerConfig]"
@@ -119,13 +119,13 @@ class LayoutParentMixin:  # type: ignore[reportUninitializedInstanceVariable]
         return self
 
 
-class LayoutChildMixin:  # type: ignore[reportUninitializedInstanceVariable]
+class LayoutChildMixin:
     """A mixin to add layout-child-related fields to a model."""
 
     percent: Annotated[int | None, Field(default=None, ge=0, le=100)]
 
 
-class FocusMixin:  # type: ignore[reportUninitializedInstanceVariable]
+class FocusMixin:
     """A mixin to add focus-related fields to a model."""
 
     focus: Annotated[
@@ -219,7 +219,7 @@ class ContainerConfig(  # type: ignore[reportUnsafeMultipleInheritance]
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class WorkspaceLayout(BaseModel, ConIdMixin, LayoutParentMixin):  # type: ignore[reportUnsafeMultipleInheritance]
+class WorkspaceLayout(BaseModel, ConIdMixin, LayoutParentMixin):
     output: Annotated[
         str | list[str] | None,
         Field(
