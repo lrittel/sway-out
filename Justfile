@@ -54,7 +54,22 @@ run-pre-commit-all:
 # Get basedpyright diagnostics for all files.
 [group('checks')]
 run-lsp:
-    uv run basedpyright .
+    echo "Running basedpyright ..."
+    -uv run basedpyright .
+    echo
+    echo "------------------------"
+    echo
+    echo "Running ruff ..."
+    -uv run ruff check .
+    echo
+    echo "------------------------"
+    echo
+    echo "Running ty ..."
+    -uv run ty check .
+    echo
+    echo "------------------------"
+    echo
+    echo "All done."
 
 # List all available workflows.
 [group('ci')]
