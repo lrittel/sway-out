@@ -166,7 +166,7 @@ def create_layout(
         # Make sure that the con is a direct child of the workspace to make layouting less error-prone.
         while find_parent_con(con_id).id != workspace_id:
             # Move the container to the right to not disturb the finished part of the layout.
-            run_command_on(con, f"move right")
+            run_command_on(con, "move right")
             # Make shure that the container is still on the workspace.
             (con,) = find_cons_by_id(connection, con_id)
             con_workspace = con.workspace()
@@ -209,7 +209,7 @@ def create_layout(
 
             # Then create the layout.
             (first_child_con,) = find_cons_by_id(connection, first_child_id)
-            run_command_on(first_child_con, f"splith")
+            run_command_on(first_child_con, "splith")
             (first_child_con,) = find_cons_by_id(connection, first_child_id)
             run_command_on(first_child_con, f"layout {container_layout.layout}")
             layout_con = find_parent_con(first_child_con.id)

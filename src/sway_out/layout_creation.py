@@ -65,7 +65,9 @@ def create_layout_from_workspace(
                         create_layout_for_container(child, con) for child in con.nodes
                     ]
                     _fix_up_percentages(children)
-                    result = ContainerConfig(children, con.layout)
+                    result = ContainerConfig.model_construct(
+                        children=children, layout=con.layout
+                    )
 
                 if len(con.marks) == 1:
                     result.mark = con.marks[0]
@@ -100,7 +102,7 @@ def create_layout_from_workspace(
             create_layout_for_container(con, workspace) for con in workspace.nodes
         ]
         _fix_up_percentages(children)
-        workspaces[workspace.name] = WorkspaceLayout(
+        workspaces[workspace.name] = WorkspaceLayout.model_construct(
             children=children, layout=workspace.layout
         )
 
@@ -195,7 +197,7 @@ def _fix_up_percentages(
         # Lazily adjust the last child to fix the percentage.
         last_child = children_layouts[-1]
         assert last_child.percent is not None, "This should have been checked before"
-        last_child.percent = cast(int, last_child.percent) + difference
+        last_child.percent = last_child.percent + difference
 
     assert (
         sum(cast(int, child.percent) for child in children_layouts) == 100

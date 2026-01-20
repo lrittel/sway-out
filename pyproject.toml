@@ -83,5 +83,10 @@ use_shortcuts = true
 [tool.basedpyright]
 pythonVersion = "3.12"
 stubPath = "src/sway_out/stubs"
-# reportMissingTypeStubs = false
-# reportPrivateUsage = false
+
+# Using additional fields in Pydantic requires `_variable` names.
+reportPrivateUsage = false
+
+# Pydantic v2 compatibility - suppress false positives
+reportUninitializedInstanceVariable = false
+reportUnsafeMultipleInheritance = false

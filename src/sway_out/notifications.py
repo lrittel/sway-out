@@ -2,8 +2,9 @@
 
 import logging
 import subprocess
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator, Literal, final
+from typing import Literal, final
 
 from sway_out.utils import PROG_NAME
 
@@ -118,7 +119,7 @@ def error_notification(title: str, text: str) -> None:
         text: The error message.
     """
 
-    _run_notify_send(summary=title, text=text, urgency="critical")
+    _ = _run_notify_send(summary=title, text=text, urgency="critical")
 
 
 def _run_notify_send(
@@ -127,7 +128,7 @@ def _run_notify_send(
     urgency: Literal["low", "normal", "critical"] = "normal",
     replace_id: int | None = None,
     expire_time: int | None = None,
-):
+) -> int:
     command = [
         "notify-send",
         f"--app-name={PROG_NAME}",

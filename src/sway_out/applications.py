@@ -2,7 +2,6 @@
 
 import logging
 import time
-from typing import cast
 
 from i3ipc import Con, Connection
 
@@ -205,12 +204,11 @@ def wait_for_window(
     matching_windows = []
     for _ in range(int(LAUNCH_TIMEOUT_SECONDS / LAUNCH_CHECK_INTERVAL_SECONDS)):
         # update the workspace to check for new windows
-        workspace = connection.get_tree().find_by_id(workspace.id)
-        if workspace is None:
+        workspace_tree = connection.get_tree().find_by_id(workspace.id)
+        if workspace_tree is None:
             raise RuntimeError("The workspace has disappeared")
-        workspace = cast(Con, workspace)
-        logger.debug(f"Checking for matching windows")
-        matching_windows = list(find_windows_on_workspace(match, workspace))
+        logger.debug("Checking for matching windows")
+        matching_windows = list(find_windows_on_workspace(match, workspace_tree))
         logger.debug(
             f"{len(matching_windows)} window(s) currently match the launch expression {match}"
         )
