@@ -2,6 +2,7 @@
 
 import logging
 import time
+from typing import cast
 
 from i3ipc import Con, Connection
 
@@ -207,6 +208,7 @@ def wait_for_window(
         workspace = connection.get_tree().find_by_id(workspace.id)
         if workspace is None:
             raise RuntimeError("The workspace has disappeared")
+        workspace = cast(Con, workspace)
         logger.debug(f"Checking for matching windows")
         matching_windows = list(find_windows_on_workspace(match, workspace))
         logger.debug(

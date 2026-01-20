@@ -18,6 +18,7 @@ def has_marks(connection: Connection, workspace_layout: WorkspaceLayout) -> bool
     """
 
     def go(layout: ContainerConfig | ApplicationLaunchConfig):
+        assert layout._con_id is not None, "The layout has to be created to before"
         (con,) = find_cons_by_id(connection, layout._con_id)
 
         return not (set(layout.assigned_marks) - set(con.marks)) and (
@@ -39,6 +40,7 @@ def apply_marks(connection: Connection, workspace_layout: WorkspaceLayout) -> No
     """
 
     def go(layout: ContainerConfig | ApplicationLaunchConfig):
+        assert layout._con_id is not None, "The layout has to be created to before"
         (con,) = find_cons_by_id(connection, layout._con_id)
         marks = layout.assigned_marks
         for m in marks:
