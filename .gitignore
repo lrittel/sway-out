@@ -40,3 +40,6 @@ cover/
 /site/
 
 /.direnv
+
+# Nix build
+/result
