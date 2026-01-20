@@ -2,7 +2,7 @@
   description = "A development environment as a Nix Flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
@@ -58,7 +58,7 @@
         # It's using https://pyproject-nix.github.io/pyproject.nix/build.html
       };
 
-      python = pkgs.python313;
+      python = pkgs.python314;
       # Construct package set
       pythonSet =
         # Use base package set from pyproject.nix builders
