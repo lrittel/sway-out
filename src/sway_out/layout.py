@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+from collections import defaultdict
 from typing import Literal, cast
 
 from i3ipc import Con, Connection
@@ -12,7 +13,14 @@ from .connection import (
     find_cons_by_id_if_exists,
     run_command_on,
 )
-from .layout_files import ApplicationLaunchConfig, ContainerConfig, WorkspaceLayout
+from .layout_files import (
+    ApplicationLaunchConfig,
+    ContainerConfig,
+    FocusType,
+    Layout,
+    WorkspaceLayout,
+    iter_container_configs,
+)
 from .utils import get_con_description, is_window
 
 logger = logging.getLogger(__name__)
@@ -384,7 +392,7 @@ def resize_layout(
             if not retry:
                 logger.debug(
                     f"Container {get_con_description(con)} resized successfully after "
-                    + f"{i+1}/{RESIZE_ATTEMPTS} attempts."
+                    + f"{i + 1}/{RESIZE_ATTEMPTS} attempts."
                 )
                 break
         else:
@@ -444,6 +452,36 @@ def resize_layout(
 
     tree = connection.get_tree()
     resize_children(workspace_layout)
+
+
+def set_up_focus(
+    connection: Connection,
+    layout: Layout,
+):
+    """Focuses containers according to the layout.
+
+    Parameters:
+        connection: A connection to sway.
+        layout: The layout to use.
+    """
+
+    focused: defaultdict[FocusType, list[ContainerConfig | ApplicationLaunchConfig]] = (
+        defaultdict(list)
+    )
+
+    for container_config in iter_container_configs(layout):
+        if container_config.focus is not None:
+            focused[container_config.focus].append(container_config)
+
+    # Handle priority by going through the focus types in order.
+    for focus_type in ("parent", "workspace", "output", "global"):
+        for container_config in focused[focus_type]:
+            assert container_config._con_id is not None
+            focused_con = find_con_by_id(connection, container_config._con_id)
+            logger.debug(
+                f"Focusing {get_con_description(focused_con)} as focus type {focus_type}"
+            )
+            run_command_on(focused_con, "focus")
 
 
 def check_layout(

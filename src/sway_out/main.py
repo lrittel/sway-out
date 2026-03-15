@@ -21,9 +21,9 @@ from .layout import (
     dissolve_layout,
     find_leftover_windows,
     resize_layout,
+    set_up_focus,
 )
 from .layout_files import (
-    find_focused_element_in_layout,
     load_layout_configuration,
     map_workspaces,
     save_layout_configuration,
@@ -117,16 +117,7 @@ def main_apply(ctx: click.Context, layout_file):
                     error_notification("Applying layout", error_message)
                 notification.successful = False
 
-        focused_layout = find_focused_element_in_layout(configuration)
-        if focused_layout is not None:
-            assert focused_layout._con_id is not None
-            focused_con = find_con_by_id(connection, focused_layout._con_id)
-            run_command_on(focused_con, "focus")
-            logger.info(
-                f"Focused element in layout: {get_con_description(focused_con)}",
-            )
-        else:
-            logger.debug("No focused element found in layout")
+        set_up_focus(connection, configuration)
 
         logger.info(f"Applied layout for {len(workspace_layout_mapping)} workspace(s)")
 
