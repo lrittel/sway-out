@@ -199,7 +199,8 @@ def create_layout(
         container_layout: ApplicationLaunchConfig | ContainerConfig,
     ) -> int:
         if isinstance(container_layout, ContainerConfig):
-            assert container_layout.children, "ContainerConfig must have children"
+            if not container_layout.children:
+                raise RuntimeError("Nested containers must have children")
             logger.debug(
                 f"Creating layout for container as {container_layout.layout} ..."
             )
@@ -253,6 +254,11 @@ def create_layout(
             logger.debug(f'Reached leaf "{result.name}" while creating layout')
             layouted_ids.add(result.id)
             return result.id
+
+    # If the layout is empty, we have nothing to do.
+    if not workspace_layout.children:
+        logger.info("The layout has no children, nothing to do here")
+        return
 
     # Check if the mark is already in use.
     marks_in_use = connection.get_marks()
@@ -384,7 +390,7 @@ def resize_layout(
             if not retry:
                 logger.debug(
                     f"Container {get_con_description(con)} resized successfully after "
-                    + f"{i+1}/{RESIZE_ATTEMPTS} attempts."
+                    + f"{i + 1}/{RESIZE_ATTEMPTS} attempts."
                 )
                 break
         else:
