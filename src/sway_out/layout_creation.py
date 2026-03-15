@@ -75,7 +75,7 @@ def create_layout_from_workspace(
                     result.marks = con.marks
 
                 if con.focused:
-                    result.focus = True
+                    result.focus = "global"
 
                 result.percent = _calculate_percent(con, parent)
 

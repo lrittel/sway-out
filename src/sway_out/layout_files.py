@@ -1,6 +1,8 @@
 """Data structures and utilities for layout descriptions."""
 
 import re
+from collections import defaultdict
+from collections.abc import Generator
 from typing import Annotated, Literal, Self, TextIO
 
 import yaml
@@ -15,6 +17,8 @@ from pydantic import (
 )
 
 from .connection import get_focused_workspace
+
+type FocusType = Literal["parent", "workspace", "output", "global"]
 
 
 class MarksMixin:
@@ -125,16 +129,15 @@ class LayoutChildMixin:
     percent: Annotated[int | None, Field(default=None, ge=0, le=100)]
 
 
-class FocusMixin:
+class ContainerFocusMixin:
     """A mixin to add focus-related fields to a model."""
 
     focus: Annotated[
-        bool,
+        FocusType | None,
         Field(
-            default=False,
+            default=None,
             title="Focus after launch",
-            description="If set, the container will be focused after it is launched. "
-            + "Only one container is allowed to have set this to true.",
+            description="If set, the container will be focused after it is launched on the specified scope.",
         ),
     ]
 
@@ -198,7 +201,7 @@ class WindowMatchExpression(BaseModel):
 
 
 class ApplicationLaunchConfig(  # type: ignore[reportUnsafeMultipleInheritance]
-    BaseModel, MarksMixin, ConIdMixin, LayoutChildMixin, FocusMixin
+    BaseModel, MarksMixin, ConIdMixin, LayoutChildMixin, ContainerFocusMixin
 ):
     cmd: Annotated[
         list[str] | str,
@@ -214,7 +217,12 @@ class ApplicationLaunchConfig(  # type: ignore[reportUnsafeMultipleInheritance]
 
 
 class ContainerConfig(  # type: ignore[reportUnsafeMultipleInheritance]
-    BaseModel, MarksMixin, ConIdMixin, LayoutParentMixin, LayoutChildMixin, FocusMixin
+    BaseModel,
+    MarksMixin,
+    ConIdMixin,
+    LayoutParentMixin,
+    LayoutChildMixin,
+    ContainerFocusMixin,
 ):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -262,38 +270,128 @@ class Layout(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_focus(self) -> Self:
-        def count_focused_elements(
-            layout: WorkspaceLayout | ContainerConfig | ApplicationLaunchConfig,
-        ) -> int:
+    def validate_focus_containers(self) -> Self:
+        def validate(config: ApplicationLaunchConfig | ContainerConfig):
+            if isinstance(config, ApplicationLaunchConfig):
+                return
+
             count = 0
 
-            if isinstance(layout, (WorkspaceLayout, ContainerConfig)):
-                count += sum(count_focused_elements(child) for child in layout.children)
+            for child in config.children:
+                if child.focus == "parent":
+                    count += 1
 
-            if (
-                isinstance(layout, (ContainerConfig, ApplicationLaunchConfig))
-                and layout.focus
-            ):
-                count += 1
+                count += self._count_focused_elements(
+                    child, ["global", "output", "workspace"]
+                )
 
-            return count
-
-        total_count = 0
+            if count > 1:
+                raise ValueError(
+                    "Only one container of the direct children of a container can have `focus` set to "
+                    + "`parent` or `workspace`, `output` or `global` for one (possibly indirect) child."
+                )
 
         if self.focused_workspace is not None:
-            total_count += count_focused_elements(self.focused_workspace)
+            for child in self.focused_workspace.children:
+                validate(child)
 
         if self.workspaces is not None:
             for workspace_layout in self.workspaces.values():
-                total_count += count_focused_elements(workspace_layout)
+                for child in workspace_layout.children:
+                    validate(child)
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_focus_workspace(self) -> Self:
+        if self.focused_workspace is not None:
+            workspace_count = self._count_focused_elements(
+                self.focused_workspace, ["global", "output", "workspace"]
+            )
+
+            if workspace_count > 1:
+                raise ValueError(
+                    "Only one container can have `focus` set to `workspace`, `output` or `global` in a workspace."
+                )
+
+        if self.workspaces is not None:
+            for workspace_layout in self.workspaces.values():
+                workspace_count = self._count_focused_elements(
+                    workspace_layout, ["global", "output", "workspace"]
+                )
+
+                if workspace_count > 1:
+                    raise ValueError(
+                        "Only one container can have `focus` set to `workspace`, `output` or `global` in a workspace."
+                    )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_focus_output(self) -> Self:
+        focus_counts: defaultdict[str, int] = defaultdict(lambda: 0)
+
+        if self.workspaces is None:
+            return self
+
+        for workspace_layout in self.workspaces.values():
+            count = self._count_focused_elements(workspace_layout, ["global", "output"])
+            if isinstance(output := workspace_layout.output, str):
+                focus_counts[output] += count
+            elif isinstance(workspace_layout.output, list):
+                for output in workspace_layout.output:
+                    focus_counts[output] += count
+
+        for output, count in focus_counts.items():
+            if count > 1:
+                raise ValueError(
+                    f"Only one container can have `focus` set to `output` or `global` for output {output}, got {count}."
+                )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_focus_global(self) -> Self:
+        total_count = 0
+
+        if self.focused_workspace is not None:
+            total_count += self._count_focused_elements(
+                self.focused_workspace, ["global"]
+            )
+
+        if self.workspaces is not None:
+            for workspace_layout in self.workspaces.values():
+                total_count += self._count_focused_elements(
+                    workspace_layout, ["global"]
+                )
 
         if total_count > 1:
             raise ValueError(
-                "Only one container can have `focus` set to `True` in the entire layout."
+                "Only one container can have `focus` set to `global` in the entire layout."
             )
 
         return self
+
+    @staticmethod
+    def _count_focused_elements(
+        layout: WorkspaceLayout | ContainerConfig | ApplicationLaunchConfig,
+        focus_types: list[FocusType],
+    ) -> int:
+        count = 0
+
+        if isinstance(layout, (WorkspaceLayout, ContainerConfig)):
+            count += sum(
+                Layout._count_focused_elements(child, focus_types)
+                for child in layout.children
+            )
+
+        if (
+            isinstance(layout, (ContainerConfig, ApplicationLaunchConfig))
+            and layout.focus in focus_types
+        ):
+            count += 1
+
+        return count
 
 
 def load_layout_configuration(file: TextIO) -> Layout:
@@ -370,44 +468,22 @@ def map_workspaces(
     return dict(go())
 
 
-def find_focused_element_in_layout(
-    layout: Layout,
-) -> ApplicationLaunchConfig | ContainerConfig | None:
-    """Find element to focus in a layout.
+def iter_container_configs(
+    layout: Layout | WorkspaceLayout | ContainerConfig | ApplicationLaunchConfig,
+) -> Generator[ContainerConfig | ApplicationLaunchConfig]:
+    if isinstance(layout, Layout):
+        if (child := layout.focused_workspace) is not None:
+            yield from iter_container_configs(child)
 
-    Arguments:
-        layout: The layout to search in.
-
-    Returns:
-        The focused element or `None` if no element is focused.
-    """
-
-    if layout.focused_workspace is not None:
-        return find_focused_element_on_workspace(layout.focused_workspace)
-    if layout.workspaces is not None:
-        for workspace_layout in layout.workspaces.values():
-            focused_element = find_focused_element_on_workspace(workspace_layout)
-            if focused_element is not None:
-                return focused_element
-
-
-def find_focused_element_on_workspace(
-    layout: WorkspaceLayout | ContainerConfig | ApplicationLaunchConfig,
-) -> ApplicationLaunchConfig | ContainerConfig | None:
-    """Find the element to focus in a layout.
-
-    Arguments:
-        layout: The layout to search in.
-
-    Returns:
-        The focused element or `None` if no element is focused.
-    """
-
-    if isinstance(layout, (ContainerConfig, ApplicationLaunchConfig)) and layout.focus:
-        return layout
-    if isinstance(layout, (WorkspaceLayout, ContainerConfig)):
+        if layout.workspaces is not None:
+            for child in layout.workspaces.values():
+                yield from iter_container_configs(child)
+    elif isinstance(layout, WorkspaceLayout):
         for child in layout.children:
-            focused_child = find_focused_element_on_workspace(child)
-            if focused_child is not None:
-                return focused_child
-    return None
+            yield from iter_container_configs(child)
+    elif isinstance(layout, ContainerConfig):
+        for child in layout.children:
+            yield from iter_container_configs(child)
+    else:
+        assert isinstance(layout, ApplicationLaunchConfig)
+        yield layout
